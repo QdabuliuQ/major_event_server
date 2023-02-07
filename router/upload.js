@@ -7,32 +7,9 @@ const router = express.Router()
 const {
     uploadAvatar,
     reportProof,
+    videoCover,
+    video,
 } = require('../router_handler/upload')
-
-function storageSetting(path, callBack) {
-    let fileName = ''
-    let time = Date.now()
-    const storage = multer.diskStorage({
-        destination: function (req, file, cb) {
-            cb(null, `uploads/${path}/`)
-        },
-        filename(req,file,cb){
-
-            const filenameArr = file.originalname.split('.');
-            fileName = time + '.' + filenameArr[filenameArr.length-1]
-            cb(null, fileName);
-            console.log(394819)
-            callBack(multer({ storage }), fileName)
-        }
-    })
-
-    // let mul = multer({ storage })
-    // console.log(fileName, '---')
-    // return {
-    //     mul,
-    //     fileName
-    // }
-}
 
 // 配置存储信息
 let fileName = ''
@@ -183,6 +160,13 @@ router.post('/articleSource', articleSource.single('source'), (req, res) => {
 })
 
 let upload = multer({ dest: 'uploads/' })
+// 上传举报材料
 router.post('/reportProof', upload.array('proof', 4), reportProof)
+
+// 上传视频封面
+router.post('/videoCover', upload.single('videoCover'), videoCover)
+
+// 上传视频
+router.post('/video', upload.single('video'), video)
 
 module.exports = router

@@ -30,6 +30,7 @@ let saveImg = (file, relUrl) => {
             // 删除二进制文件
             await fs.unlink(file.path, err => {
                 if (err) { reject(err) }
+
             })
         })
     })
@@ -54,7 +55,31 @@ exports.reportProof = (req, res) => {
             msg: "图片上传成功"
         })
     }).catch((err)=>{
-        res.send('图片上传失败')
+        res.cc('图片上传失败')
     });
 }
 
+exports.videoCover = (req, res) => {
+    saveImg(req.file, 'videoCover').then(results => {
+        res.send({
+            status: 0,
+            url: results,
+            msg: "图片上传成功"
+        })
+    }).catch((err)=>{
+        res.cc('图片上传失败')
+    })
+}
+
+exports.video = (req, res) => {
+    saveImg(req.file, 'videos').then(results => {
+        res.send({
+            status: 0,
+            url: results,
+            msg: "视频上传成功"
+        })
+    }).catch((err)=>{
+        console.log(err)
+        res.cc('视频上传失败')
+    })
+}

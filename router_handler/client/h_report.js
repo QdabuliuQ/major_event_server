@@ -2,6 +2,7 @@ const db = require('../../db/index')
 const {
     uuid
 } = require('../../tools')
+const {pageSize, oss} = require("../../config");
 
 // 举报文章
 exports.addArticleReport = (req, res) => {
@@ -40,6 +41,61 @@ exports.addCommentReport = (req, res) => {
             if(err) return res.cc(err)
             if(results.affectedRows != 1) return res.cc('举报失败')
             res.cc('提交成功', 0)
+        })
+    })
+}
+
+// 获取文章举报记录
+exports.getArticleReportList = (req, res) => {
+
+    const sqlStr = `select ev_ar.*, ev_a.cover_img, ev_a.title, ev_a.content from ev_article_report ev_ar join ev_articles ev_a on ev_ar.art_id = ev_a.id where user_id = ? order by ev_ar.time desc limit ?,?`
+    db.query(sqlStr, [
+        req.user.id,
+        (parseInt(req.query.offset)-1)*pageSize,
+        pageSize
+    ], (err, results) => {
+        if(err) return res.cc(err)
+        for(let item of results) {
+            item.cover_img = oss + item.cover_img
+            item.content = item.content.replace(/<[^>]+>/ig, '')
+        }
+        let data = results
+        const sqlStr = 'select count(*) as count from ev_article_report where user_id = ?'
+        db.query(sqlStr, req.user.id, (err, results) => {
+            console.log(pageSize)
+            if(err) return res.cc(err)
+            res.send({
+                status: 0,
+                data,
+                count: results[0].count,
+                more: parseInt(req.query.offset)*pageSize < results[0].count,
+                msg: '获取举报文章成功'
+            })
+        })
+    })
+}
+
+// 获取评论举报记录
+exports.getCommentReportList = (req, res) => {
+    const sqlStr = 'select ev_cr.*, ev_ac.content from ev_comment_report ev_cr join ev_article_comment ev_ac on ev_cr.comment_id = ev_ac.comment_id where ev_cr.user_id=? order by ev_cr.time desc limit ?,?'
+    db.query(sqlStr, [
+        req.user.id,
+        (parseInt(req.query.offset)-1)*pageSize,
+        pageSize
+    ], (err, results) => {
+        console.log(results)
+        if(err) return res.cc(err)
+        let data = results
+        const sqlStr = `select count(*) as count from ev_comment_report where user_id = ?`
+        db.query(sqlStr, req.user.id, (err, results) => {
+            if(err) return res.cc(err)
+            res.send({
+                status: 0,
+                data,
+                msg: '获取举报评论成功',
+                count: results[0].count,
+                more: parseInt(req.query.offset)*pageSize < results[0].count,
+            })
         })
     })
 }

@@ -140,10 +140,10 @@ exports.updateFollowUser = (req, res) => {
 
 // 获取用户关注
 exports.getUserFollow = (req, res) => {
-    const sqlStr = `select ev_u.id, ev_u.nickname, ev_u.user_pic, ev_u.intro, (select count(*) from ev_user_follow ev_uf_2 where ev_uf_2.follow_id = ? and ev_uf_2.user_id = '${req.user.id}') as is_follow from ev_user_follow ev_uf join ev_users ev_u on ev_uf.follow_id = ev_u.id where ev_uf.user_id = ? order by ev_uf.time desc limit ?,?`
+    const sqlStr = `select ev_u.id, ev_u.nickname, ev_u.user_pic, ev_u.intro, (select count(*) from ev_user_follow ev_uf_2 where ev_uf_2.follow_id = ev_u.id and ev_uf_2.user_id = '${req.user.id}') as is_follow from ev_user_follow ev_uf join ev_users ev_u on ev_uf.follow_id = ev_u.id where ev_uf.user_id = ? order by ev_uf.time desc limit ?,?`
 
     db.query(sqlStr, [
-        req.user.id,
+        // req.user.id,
         req.query.id,
         (parseInt(req.query.offset)-1) * pageSize,
         pageSize
@@ -169,10 +169,10 @@ exports.getUserFollow = (req, res) => {
 }
 
 exports.getUserFans = (req, res) => {
-    const sqlStr = `select ev_u.id, ev_u.nickname, ev_u.user_pic, ev_u.intro, (select count(*) from ev_user_follow ev_uf_2 where ev_uf_2.follow_id = ? and ev_uf_2.user_id = '${req.user.id}') as is_follow from ev_user_follow ev_uf join ev_users ev_u on ev_uf.user_id = ev_u.id where ev_uf.follow_id = ? order by ev_uf.time desc limit ?,?`
+    const sqlStr = `select ev_u.id, ev_u.nickname, ev_u.user_pic, ev_u.intro, (select count(*) from ev_user_follow ev_uf_2 where ev_uf_2.follow_id = ev_u.id and ev_uf_2.user_id = '${req.user.id}') as is_follow from ev_user_follow ev_uf join ev_users ev_u on ev_uf.user_id = ev_u.id where ev_uf.follow_id = ? order by ev_uf.time desc limit ?,?`
 
     db.query(sqlStr, [
-        req.user.id,
+        // req.user.id,
         req.query.id,
         (parseInt(req.query.offset)-1) * pageSize,
         pageSize
