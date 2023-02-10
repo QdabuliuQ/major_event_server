@@ -71,6 +71,35 @@ exports.createSql = (whereSql) => {
     } else {
         sql = `select * from ev_admins where admin_id=?`
     }
-    console.log(sql)
     return sql
+}
+
+exports.createConditionSql = (conditions, data) => {
+    let res = {}
+    for(let item of conditions) {
+        let piefix = item.piefix ? item.piefix+'.' : ''
+        res[item.name+'Sql'] = ''
+        if(item.type == 'range') {
+            if(data[item.name_dic1] && data[item.name_dic2]) {
+                res[item.name+'Sql'] = `(${piefix}${item.name} between ${data[item.name_dic1]} and ${data[item.name_dic2]})`
+            } else {
+                res[item.name+'Sql'] = `(${piefix}${item.name} between 0 and ${Date.now()})`
+            }
+        } else if(item.type == 'eval'){  // 相等条件sql
+            let val = item.t == 'string' ? `"${data[item.name]}"` : data[item.name]
+            if(data[item.name]) {
+                res[item.name+'Sql'] = `(${piefix}${item.name} = ${val})`
+            } else {
+                res[item.name+'Sql'] = `(${piefix}${item.name} <> -999)`
+            }
+        } else if(item.type == 'like') {
+            let val = data[item.name] ? data[item.name] : ''
+            for(let i = 0; i < item.fileds.length; i ++) {
+                item.fileds[i] = `${item.fileds[i]} like "%${val}%"`
+            }
+            console.log(item.fileds)
+            res[item.name+'Sql'] = `(${item.fileds.join(' or ')})`
+        }
+    }
+    return res
 }

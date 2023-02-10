@@ -99,3 +99,23 @@ exports.getCommentReportList = (req, res) => {
         })
     })
 }
+
+// 获取举报详情
+exports.getArticleReportDetail = (req, res) => {
+    const sqlStr = `select ev_ar.*, ev_a.cover_img, ev_a.title, ev_a.content, ev_a.pub_date from ev_article_report ev_ar join ev_articles ev_a on ev_ar.art_id = ev_a.id where ev_ar.id = ?`
+    db.query(sqlStr, req.params.id, (err, results) => {
+        if(err) return res.cc(err)
+        if(results.length != 1) return res.cc(err)
+        results[0].cover_img = oss + results[0].cover_img
+        results[0].content = results[0].content.replace(/<[^>]+>/ig, '')
+        results[0].proof = results[0].proof != '' ? JSON.parse(results[0].proof) : []
+        for(let item of results[0].proof) {
+            item.link = oss + item.link
+        }
+        res.send({
+            status: 0,
+            data: results[0],
+            msg: '获取举报详情成功',
+        })
+    })
+}

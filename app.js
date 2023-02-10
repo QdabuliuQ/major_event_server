@@ -112,6 +112,8 @@ app.use('/admin/notice', require('./router/admin/notice'))
 app.use('/admin/rep', require('./router/admin/report'))
 // 评论模块
 app.use('/admin/com', require('./router/admin/comment'))
+// 视频模块
+app.use('/admin/vid', require('./router/admin/video'))
 
 // 前台模块
 // 用户信息

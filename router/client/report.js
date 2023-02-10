@@ -8,7 +8,8 @@ const {
     addArticleReport,
     addCommentReport,
     getArticleReportList,
-    getCommentReportList
+    getCommentReportList,
+    getArticleReportDetail
 } = require('../../router_handler/client/h_report')
 const { getReportReason } = require("../../router_handler/admin/report");
 const router = express.Router()
@@ -27,5 +28,8 @@ router.get('/getArticleReportList', getArticleReportList)
 
 // 获取评论举报记录
 router.get('/getCommentReportList', getCommentReportList)
+
+// 获取举报详情
+router.get('/getArticleReportDetail/:id', getArticleReportDetail)
 
 module.exports = router
