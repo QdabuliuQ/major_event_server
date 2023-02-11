@@ -6,6 +6,9 @@ const {pageSize, oss} = require("../../config");
 
 // 发布视频
 exports.pubVideo = (req, res) => {
+    if(req.userData.status == 3) {
+        return res.cc('账号被禁言')
+    }
     const sqlStr = 'insert into ev_videos set ?'
     db.query(sqlStr, {
         id: 'v_'+uuid(16),
@@ -15,8 +18,6 @@ exports.pubVideo = (req, res) => {
         duration: req.body.duration,
         time: Date.now(),
         user_id: req.user.id,
-        nickname: req.user.nickname,
-        user_pic: req.userData.user_pic
     }, (err, results) => {
         if(err) return res.cc(err)
         if(results.affectedRows != 1) return res.cc('发布视频失败')
@@ -26,7 +27,7 @@ exports.pubVideo = (req, res) => {
 
 exports.getVideoList = (req, res) => {
     let pageSize = 5
-    const sqlStr = `select ev_v.*, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id) as praise_count, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_praise, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id) as collect_count, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_collect from ev_videos ev_v where state = '2' and ev_v.is_delete = '0' order by ev_v.time desc limit ?,?`
+    const sqlStr = `select ev_v.*, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id) as praise_count, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_praise, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id) as collect_count, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_collect, (select count(*) from ev_video_comment ev_vc where ev_vc.video_id = ev_v.id) as comment_count from ev_videos ev_v join ev_users ev_u on ev_v.user_id=ev_u.id where state = '2' and ev_v.is_delete = '0' order by ev_v.time desc limit ?,?`
     db.query(sqlStr, [
         (parseInt(req.query.offset)-1)*pageSize,
         pageSize
@@ -115,10 +116,90 @@ exports.collectVideo = (req, res) => {
             req.query.video_id,
             req.user.id
         ], (err, results) => {
-            console.log(err,)
             if(err) return res.cc(err)
             if(results.affectedRows != 1) return res.cc('操作失败')
             res.cc('操作成功', 0)
+        })
+    })
+}
+
+// 发表评论
+exports.pubVideoComment = (req, res) => {
+    if(req.userData.status == 3) {
+        return res.cc('账号被禁言')
+    }
+    const sqlStr = 'insert into ev_video_comment set ?'
+    db.query(sqlStr, {
+        comment_id: 'vc_'+uuid(16),
+        user_id: req.user.id,
+        video_id: req.body.video_id,
+        content: req.body.content,
+        time: Date.now(),
+    }, (err, results) => {
+        if(err) return res.cc(err)
+        if(results.affectedRows != 1) return res.cc('发送失败')
+        res.cc('发送成功', 0)
+    })
+}
+
+// 获取视频评论
+exports.getVideoComment = (req, res) => {
+    let ps = req.query.pageSize ? parseInt(req.query.pageSize) : pageSize
+    const sqlStr = `select ev_vc.*, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_comment_praise_record ev_vcpr where ev_vcpr.comment_id=ev_vc.comment_id) as praise_count, (select count(*) from ev_video_comment_praise_record ev_vcpr where ev_vcpr.comment_id=ev_vc.comment_id and ev_vcpr.user_id='${req.user.id}') as is_praise from ev_video_comment ev_vc join ev_users ev_u on ev_vc.user_id = ev_u.id where ev_vc.video_id = ? ${req.type === 'client' ? 'and ev_vc.is_delete = "0"' : ''} order by ev_vc.time desc limit ?,?`
+
+    db.query(sqlStr, [
+        req.query.video_id,
+        (parseInt(req.query.offset)-1)*ps,
+        ps
+    ], (err, results) => {
+        if(err) return res.cc(err)
+        for(let item of results) {
+            item.user_pic = oss + item.user_pic
+            delete item.is_delete
+        }
+        let data = results
+        const sqlStr = `select count(*) as count from ev_video_comment  where video_id = ? ${req.type === 'client' ? 'and is_delete = "0"' : ''}`
+        db.query(sqlStr, req.query.video_id, (err, results) => {
+            if(err) return res.cc(err)
+            res.send({
+                status: 0,
+                data,
+                msg: '获取视频评论成功',
+                count: results[0].count,
+                pageSize: ps,
+                more: parseInt(req.query.offset)*ps < results[0].count
+            })
+        })
+    })
+}
+
+// 点赞/取消点赞评论
+exports.praiseComment = (req, res) => {
+    const sqlStr = 'select * from ev_video_comment_praise_record where user_id=? and comment_id=? and video_id=?'
+    db.query(sqlStr, [
+        req.user.id,
+        req.body.comment_id,
+        req.body.video_id
+    ], (err, results) => {
+        if(err) return res.cc(err)
+        let is_praise = req.body.is_praise
+        if(results.length == 0 && is_praise == 0) return res.cc('操作失败')
+        if(results.length == 1 && is_praise == 1) return res.cc('操作失败')
+
+        const sqlStr = is_praise == 1 ?  'insert into ev_video_comment_praise_record set ?' : 'delete from ev_video_comment_praise_record where user_id=? and comment_id=? and video_id=?'
+        db.query(sqlStr, is_praise == 1 ? {
+            user_id: req.user.id,
+            comment_id: req.body.comment_id,
+            video_id: req.body.video_id,
+            time: Date.now()
+        } : [
+            req.user.id,
+            req.body.comment_id,
+            req.body.video_id
+        ], (err, results) => {
+            if(err) return res.cc(err)
+            if(results.affectedRows != 1) return res.cc('操作失败')
+            res.cc('操作成功',0)
         })
     })
 }

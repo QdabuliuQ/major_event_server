@@ -56,5 +56,4 @@ router.get('/getCommentFloor', getCommentFloor)
 // 点赞评论
 router.post('/praiseComment', praiseComment)
 
-
 module.exports = router

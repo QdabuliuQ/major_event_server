@@ -19,6 +19,11 @@ const {
   update_password_schema,
   update_avatar_schema
 } = require('../../schema/admin/user')
+const {
+  getUserFollow,
+  getUserFans
+} = require("../../router_handler/client/h_userInfo");
+const {getArticleDetail} = require("../../router_handler/client/h_article");
 const router = express.Router()
 
 // 获取用户信息
@@ -53,5 +58,14 @@ router.get('/getCollectVideoById', getCollectVideoById)
 
 // 获取视频点赞
 router.get('/getPraiseVideoById', getPraiseVideoById)
+
+// 获取用户关注
+router.get('/getUserFollow', getUserFollow)
+
+// 获取用户粉丝
+router.get('/getUserFans', getUserFans)
+
+// 获取文章信息
+router.get('/getArticleDetail/:id', getArticleDetail)
 
 module.exports = router

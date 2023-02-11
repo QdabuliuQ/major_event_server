@@ -67,7 +67,7 @@ exports.addArticle = (req, res) => {
 
 // 获取文章详情
 exports.getArticleDetail = (req, res) => {
-    const sqlStr = 'select ev_a.*, ev_c.name as cate_name, ev_u.nickname, ev_u.user_pic, ev_u.intro from ev_articles ev_a, ev_article_cate ev_c, ev_users ev_u where ev_c.id = ev_a.cate_id and ev_a.author_id=ev_u.id and ev_a.id=? and ev_a.state="1" and ev_a.is_delete=0 and ev_c.is_delete=0'
+    const sqlStr = `select ev_a.*, ev_c.name as cate_name, ev_u.nickname, ev_u.user_pic, ev_u.intro from ev_articles ev_a, ev_article_cate ev_c, ev_users ev_u where ev_c.id = ev_a.cate_id and ev_a.author_id=ev_u.id and ev_a.id=? ${req.type === 'client' ? 'and ev_a.state="1" and ev_a.is_delete=0 and ev_c.is_delete=0' : ''}`
     db.query(sqlStr, req.params.id, (err, results) => {
         if(err) return res.cc(err)
         if(results.length != 1) return res.cc('获取文章信息失败', -2)

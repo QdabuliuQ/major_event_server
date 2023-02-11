@@ -28,7 +28,7 @@ exports.getVideoList = (req, res) => {
         req.query
     )
 
-    const sqlStr = `select *, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id) as praise_count, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id) as collect_count from ev_videos ev_v where ${stateSql} and ${is_deleteSql} and ${timeSql} and ${valSql} order by time desc limit ?,?`
+    const sqlStr = `select ev_v.*, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id) as praise_count, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id) as collect_count from ev_videos ev_v join ev_users ev_u on ev_v.user_id=ev_u.id where ${stateSql} and ${is_deleteSql} and ${timeSql} and ${valSql} order by time desc limit ?,?`
     db.query(sqlStr, [
         (parseInt(req.query.offset)-1)*pageSize,
         pageSize

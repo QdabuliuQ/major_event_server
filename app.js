@@ -45,6 +45,7 @@ app.use((req, res, next) => {
   let baseUrl = req.originalUrl.substring(1).split('/')
   let root = baseUrl[0], url = baseUrl[1]
   if(root == 'client') {
+    req.u_type = 'client'
     if(url != 'api') {
       // 验证账号状态
       const sqlStr = 'select * from ev_users where id=?'
@@ -60,6 +61,7 @@ app.use((req, res, next) => {
       next()
     }
   } else if(root == 'admin'){
+    req.u_type = 'admin'
     if(url != 'api') {
       const sqlStr = 'select * from ev_admins where admin_id=?'
       db.query(sqlStr, req.user.admin_id, (err, results) => {
