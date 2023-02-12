@@ -25,9 +25,11 @@ exports.addArticleReport = (req, res) => {
 // 举报评论
 exports.addCommentReport = (req, res) => {
     // 判断是否存在该评论
-    const sqlStr = 'select * from ev_article_comment where comment_id=? and is_delete="0"'
+    const sqlStr = req.body.type == '1' ? 'select * from ev_article_comment where comment_id=? and is_delete="0"' : 'select * from ev_video_comment where comment_id=? and is_delete="0"'
+    console.log(sqlStr)
     db.query(sqlStr, req.body.comment_id, (err, results) => {
         if(err) return res.cc(err)
+
         if(results.length != 1) return res.cc('举报失败')
 
         const sqlStr = 'insert into ev_comment_report set ?'
@@ -36,7 +38,8 @@ exports.addCommentReport = (req, res) => {
             user_id: req.user.id,
             comment_id: req.body.comment_id,
             reason: req.body.reason,
-            time: Date.now()
+            time: Date.now(),
+            type: req.body.type
         }, (err, results) => {
             if(err) return res.cc(err)
             if(results.affectedRows != 1) return res.cc('举报失败')

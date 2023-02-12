@@ -145,8 +145,8 @@ exports.pubVideoComment = (req, res) => {
 // 获取视频评论
 exports.getVideoComment = (req, res) => {
     let ps = req.query.pageSize ? parseInt(req.query.pageSize) : pageSize
-    const sqlStr = `select ev_vc.*, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_comment_praise_record ev_vcpr where ev_vcpr.comment_id=ev_vc.comment_id) as praise_count, (select count(*) from ev_video_comment_praise_record ev_vcpr where ev_vcpr.comment_id=ev_vc.comment_id and ev_vcpr.user_id='${req.user.id}') as is_praise from ev_video_comment ev_vc join ev_users ev_u on ev_vc.user_id = ev_u.id where ev_vc.video_id = ? ${req.type === 'client' ? 'and ev_vc.is_delete = "0"' : ''} order by ev_vc.time desc limit ?,?`
-
+    const sqlStr = `select ev_vc.*, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_comment_praise_record ev_vcpr where ev_vcpr.comment_id=ev_vc.comment_id) as praise_count, (select count(*) from ev_video_comment_praise_record ev_vcpr where ev_vcpr.comment_id=ev_vc.comment_id and ev_vcpr.user_id='${req.user.id}') as is_praise from ev_video_comment ev_vc join ev_users ev_u on ev_vc.user_id = ev_u.id where ev_vc.video_id = ? ${req.u_type === 'client' ? 'and ev_vc.is_delete = "0"' : ''} order by ev_vc.time desc limit ?,?`
+    console.log(req.u_type)
     db.query(sqlStr, [
         req.query.video_id,
         (parseInt(req.query.offset)-1)*ps,

@@ -228,8 +228,8 @@ exports.pubArticleComment = (req, res) => {
             comment_id: c_id ? c_id : p_id,
             user_id: req.user.id,
             content,
-            nickname: req.user.nickname,
-            user_pic: req.userData.user_pic
+            // nickname: req.user.nickname,
+            // user_pic: req.userData.user_pic
         }, (err, results) => {
             if(err) return res.cc('发表评论失败')
 
@@ -241,7 +241,7 @@ exports.pubArticleComment = (req, res) => {
 
 // 获取文章评论
 exports.getArticleComment = (req, res) => {
-    const sqlStr = `select *, (select count(*) - 1 from ev_article_comment_record ev_cr where ev_cr.parent_id = ev_c.comment_id) as reply, (select count(IF(ev_cr.parent_id = ev_cpr.comment_id,true,null)) from ev_article_comment_praise_record ev_cpr) as praise, (select count(IF(ev_cr.parent_id = ev_cpr.comment_id and ev_cpr.user_id = '${req.user.id}',true,null)) from ev_article_comment_praise_record ev_cpr) as is_praise  from ev_article_comment_record ev_cr join ev_article_comment ev_c on ev_cr.parent_id = ev_c.comment_id where ev_cr.art_id=? and ev_c.is_delete='0' and ev_cr.child_id is null order by ev_cr.time desc limit ?, ?`
+    const sqlStr = `select *, ev_u.nickname, ev_u.user_pic, (select count(*) - 1 from ev_article_comment_record ev_cr where ev_cr.parent_id = ev_c.comment_id) as reply, (select count(IF(ev_cr.parent_id = ev_cpr.comment_id,true,null)) from ev_article_comment_praise_record ev_cpr) as praise, (select count(IF(ev_cr.parent_id = ev_cpr.comment_id and ev_cpr.user_id = '${req.user.id}',true,null)) from ev_article_comment_praise_record ev_cpr) as is_praise from ev_article_comment_record ev_cr join ev_article_comment ev_c on ev_cr.parent_id = ev_c.comment_id inner join ev_users ev_u on ev_c.user_id = ev_u.id where ev_cr.art_id=? and ev_c.is_delete='0' and ev_cr.child_id is null order by ev_cr.time desc limit ?, ?`
     db.query(sqlStr, [
         req.query.art_id,
         (parseInt(req.query.offset) - 1)  * req.query.limit,
@@ -269,7 +269,7 @@ exports.getArticleComment = (req, res) => {
 
 // 获取楼层评论
 exports.getCommentFloor = (req, res) => {
-    const sqlStr = `select *, (select count(IF(ev_cr.child_id = ev_cpr.comment_id,true,null)) from ev_article_comment_praise_record ev_cpr) as praise, (select count(IF(ev_cr.child_id = ev_cpr.comment_id and ev_cpr.user_id = '${req.user.id}',true,null)) from ev_article_comment_praise_record ev_cpr) as is_praise from ev_article_comment_record ev_cr join ev_article_comment ev_c on ev_cr.child_id = ev_c.comment_id where ev_cr.art_id=? and ev_cr.parent_id=? and ev_cr.child_id is not null and ev_c.is_delete='0' order by ev_cr.time desc limit ?, ?`
+    const sqlStr = `select *, ev_u.nickname, ev_u.user_pic, (select count(IF(ev_cr.child_id = ev_cpr.comment_id,true,null)) from ev_article_comment_praise_record ev_cpr) as praise, (select count(IF(ev_cr.child_id = ev_cpr.comment_id and ev_cpr.user_id = '${req.user.id}',true,null)) from ev_article_comment_praise_record ev_cpr) as is_praise from ev_article_comment_record ev_cr join ev_article_comment ev_c on ev_cr.child_id = ev_c.comment_id inner join ev_users ev_u on ev_c.user_id = ev_u.id where ev_cr.art_id=? and ev_cr.parent_id=? and ev_cr.child_id is not null and ev_c.is_delete='0' order by ev_cr.time desc limit ?, ?`
     db.query(sqlStr, [
         req.query.art_id,
         req.query.comment_id,
@@ -301,7 +301,7 @@ exports.getCommentFloor = (req, res) => {
 
 // 获取评论
 exports.getCommentDetail = (req, res) => {
-    const sqlStr = `select *, (select count(IF(ev_cr.parent_id = ev_cpr.comment_id,true,null)) from ev_article_comment_praise_record ev_cpr) as praise, (select count(IF(ev_cr.parent_id = ev_cpr.comment_id and ev_cpr.user_id = '${req.user.id}',true,null)) from ev_article_comment_praise_record ev_cpr) as is_praise from ev_article_comment ev_c join ev_article_comment_record ev_cr on ev_c.comment_id = ? and ev_c.comment_id = ev_cr.parent_id and ev_cr.child_id is null and ev_c.is_delete = '0'`
+    const sqlStr = `select *, ev_u.nickname, ev_u.user_pic, (select count(IF(ev_cr.parent_id = ev_cpr.comment_id,true,null)) from ev_article_comment_praise_record ev_cpr) as praise, (select count(IF(ev_cr.parent_id = ev_cpr.comment_id and ev_cpr.user_id = '${req.user.id}',true,null)) from ev_article_comment_praise_record ev_cpr) as is_praise from ev_article_comment ev_c join ev_article_comment_record ev_cr on ev_c.comment_id = ? and ev_c.comment_id = ev_cr.parent_id and ev_cr.child_id is null and ev_c.is_delete = '0' inner join ev_users ev_u on ev_c.user_id = ev_u.id`
     db.query(sqlStr, req.query.comment_id, (err, results) => {
         if(err) return res.cc(err)
         if(!results || !results.length) return  res.cc('获取评论信息失败', -2)

@@ -3,32 +3,35 @@ const {
     pageSize,
     oss
 } = require('../../config')
+const {
+    createConditionSql
+} = require('../../tools')
 
 // 获取文章举报列表
 exports.getReportList = (req, res) => {
-    let reasonSql = ''
-    if(req.query.reason) {
-        reasonSql = `(ev_r.reason = '${req.query.reason}')`
-    } else {
-        reasonSql = `(ev_r.reason <> '')`
-    }
-
-    let stateSql = ''
-    if(req.query.state) {
-        stateSql = `(ev_r.state = '${req.query.state}')`
-    } else {
-        stateSql = `(ev_r.state <> '')`
-    }
-
-    let timeSql = ''
-    if(parseInt(req.query.startTime) && parseInt(req.query.endTime)) {
-        timeSql = `(ev_r.time between ${req.query.startTime} and ${req.query.endTime})`
-    } else {
-        timeSql = `(ev_r.time between 0 and ${Date.now()})`
-    }
-
-    let valSql = '', val = req.query.val ? req.query.val : ''
-    valSql = `(ev_r.id like '%${val}%' or ev_r.art_id like '%${val}%' or ev_r.user_id like '%${val}%' or ev_r.desc like '%${val}%')`
+    let {reasonSql,stateSql,timeSql,valSql} = createConditionSql([
+        {
+            prefix: 'ev_r',
+            name: 'reason',
+            type: 'eval',
+            t: 'string',
+        }, {
+            prefix: 'ev_r',
+            name: 'state',
+            type: 'eval',
+            t: 'string',
+        }, {
+            prefix: 'ev_r',
+            name: 'time',
+            name_dic1: 'startTime',
+            name_dic2: 'endTime',
+            type: 'range',
+        }, {
+            name: 'val',
+            type: 'like',
+            fields: ['ev_r.id','ev_r.art_id','ev_r.user_id','ev_r.desc']
+        }
+    ], req.query)
 
     const sqlStr = `select ev_r.*, ev_a.title, ev_a.content, ev_a.cover_img, ev_a.pub_date, ev_a.targets, ev_a.author_id, ev_u.nickname, ev_u.intro, ev_u.user_pic, ev_c.name as cate_name from ev_article_report ev_r join ev_articles ev_a on ev_r.art_id=ev_a.id inner join ev_users ev_u on ev_r.user_id=ev_u.id inner join ev_article_cate ev_c on ev_c.id=ev_a.cate_id where ${reasonSql} and ${stateSql} and ${timeSql} and ${valSql} order by ev_r.time desc limit ?,?`
 
@@ -115,31 +118,36 @@ exports.deleteReportReason = (req, res) => {
 
 // 获取评论举报列表
 exports.getCommentReportList = (req, res) => {
-    let reasonSql = ''
-    if(req.query.reason) {
-        reasonSql = `(ev_cr.reason = '${req.query.reason}')`
-    } else {
-        reasonSql = `(ev_cr.reason <> ' ')`
-    }
+    let {typeSql,reasonSql,stateSql,timeSql,valSql } = createConditionSql([
+        {
+            prefix: 'ev_cr',
+            name: 'type',
+            type: 'eval',
+            t: 'string'
+        }, {
+            prefix: 'ev_cr',
+            name: 'reason',
+            type: 'eval',
+            t: 'string'
+        }, {
+            prefix: 'ev_cr',
+            name: 'state',
+            type: 'eval',
+            t: 'string'
+        }, {
+            prefix: 'ev_cr',
+            name: 'time',
+            name_dic1: 'startTime',
+            name_dic2: 'endTime',
+            type: 'range',
+        }, {
+            name: 'val',
+            type: 'like',
+            fields: ['ev_cr.id','ev_cr.user_id','ev_cr.comment_id','ev_u.id', 'ev_u.nickname', 'ev_ac.content']
+        }
+    ], req.query)
 
-    let stateSql = ''
-    if(req.query.state) {
-        stateSql = `(ev_cr.state = '${req.query.state}')`
-    } else {
-        stateSql = `(ev_cr.state <> ' ')`
-    }
-
-    let timeSql = ''
-    if(req.query.startTime && req.query.endTime) {
-        timeSql = `(ev_cr.time between ${req.query.startTime} and ${req.query.endTime})`
-    } else {
-        timeSql = `(ev_cr.time between 0 and ${Date.now()})`
-    }
-
-    let val = req.query.val ? req.query.val : ''
-    let valSql = `(ev_cr.id like '%${val}%' or ev_cr.user_id like '%${val}%' or ev_cr.comment_id like '%${val}%' or ev_ac.user_id like '%${val}%' or ev_ac.nickname like '%${val}%' or ev_ac.content like '%${val}%')`
-
-    const sqlStr = `select ev_cr.*, ev_ac.user_pic, ev_ac.user_id u_id, ev_ac.nickname, ev_ac.content, ev_u.user_pic re_user_pic, ev_u.nickname re_nickname from ev_comment_report ev_cr join ev_article_comment ev_ac on ev_cr.comment_id = ev_ac.comment_id inner join ev_users ev_u on ev_cr.user_id = ev_u.id where ${reasonSql} and ${stateSql} and ${timeSql} and ${valSql} order by ev_cr.time desc limit ?,?`
+    const sqlStr = `select ev_cr.*, if(ev_cr.type = '1', ev_ac.content, ev_vc.content) as content, ev_u.user_pic re_user_pic, ev_u.nickname re_nickname from ev_comment_report ev_cr join ev_users ev_u on ev_cr.user_id = ev_u.id LEFT JOIN ev_article_comment ev_ac ON ev_cr.comment_id = ev_ac.comment_id AND ev_cr.type = "1" LEFT JOIN ev_video_comment ev_vc ON ev_cr.comment_id = ev_vc.comment_id AND ev_cr.type = "2" where ${reasonSql} and ${stateSql} and ${timeSql} and ${valSql} and ${typeSql} order by ev_cr.time desc limit ?,?`
     db.query(sqlStr, [
         (parseInt(req.query.offset)-1)*pageSize,
         pageSize
@@ -150,7 +158,7 @@ exports.getCommentReportList = (req, res) => {
             item.re_user_pic = oss + item.re_user_pic
         }
         let data = results
-        const sqlStr = `select count(*) as count from ev_comment_report ev_cr join ev_article_comment ev_ac on ev_cr.comment_id = ev_ac.comment_id inner join ev_users ev_u on ev_cr.user_id = ev_u.id where ${reasonSql} and ${stateSql} and ${timeSql} and ${valSql} order by ev_cr.time desc`
+        const sqlStr = `select count(*) as count from ev_comment_report ev_cr join ev_article_comment ev_ac on ev_cr.comment_id = ev_ac.comment_id inner join ev_users ev_u on ev_cr.user_id = ev_u.id where ${reasonSql} and ${stateSql} and ${timeSql} and ${valSql} and ${typeSql} order by ev_cr.time desc`
 
         db.query(sqlStr, (err, results) => {
             if(err) return res.cc(err)
@@ -179,5 +187,4 @@ exports.updateCommentReportState = (req, res) => {
             res.cc('操作成功', 0)
         })
     })
-
 }

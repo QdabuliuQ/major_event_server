@@ -3,7 +3,9 @@ const router = express.Router()
 const {
     getCommentList,
     deleteComment,
-    getCommentFloor
+    getCommentFloor,
+    getVideoCommentList,
+    deleteVideoComment
 } = require('../../router_handler/admin/comment')
 const {
     getArticleDetail,
@@ -20,5 +22,11 @@ router.post('/deleteComment', deleteComment)
 
 // 获取回复评论
 router.get('/getCommentFloor', getCommentFloor)
+
+// 获取视频评论
+router.get('/getVideoCommentList', getVideoCommentList)
+
+// 删除评论
+router.post('/deleteVideoComment', deleteVideoComment)
 
 module.exports = router

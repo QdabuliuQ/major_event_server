@@ -4,18 +4,20 @@ const {
     createConditionSql
 } = require('../../tools')
 
-
 exports.getVideoList = (req, res) => {
     let { stateSql, is_deleteSql, timeSql, valSql } = createConditionSql([
         {
-            name: 'state',
-            type: 'eval',
-            t: 'string',
+                prefix: 'ev_v',
+                name: 'state',
+                type: 'eval',
+                t: 'string',
         },{
+            prefix: 'ev_v',
             name: 'is_delete',
             type: 'eval',
             t: 'string'
         },{
+            prefix: 'ev_v',
             name: 'time',
             name_dic1: 'startTime',
             name_dic2: 'endTime',
@@ -23,12 +25,12 @@ exports.getVideoList = (req, res) => {
         },{
             name: 'val',
             type: 'like',
-            fileds: ['id','title','user_id','nickname']
+            fields: ['ev_v.id','ev_v.title','ev_v.user_id','ev_u.nickname']
         }],
         req.query
     )
 
-    const sqlStr = `select ev_v.*, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id) as praise_count, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id) as collect_count from ev_videos ev_v join ev_users ev_u on ev_v.user_id=ev_u.id where ${stateSql} and ${is_deleteSql} and ${timeSql} and ${valSql} order by time desc limit ?,?`
+    const sqlStr = `select ev_v.*, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id) as praise_count, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id) as collect_count from ev_videos ev_v join ev_users ev_u on ev_v.user_id=ev_u.id where ${stateSql} and ${is_deleteSql} and ${timeSql} and ${valSql} order by ev_v.time desc limit ?,?`
     db.query(sqlStr, [
         (parseInt(req.query.offset)-1)*pageSize,
         pageSize
@@ -40,7 +42,7 @@ exports.getVideoList = (req, res) => {
             item.user_pic = oss + item.user_pic
         }
         let data = results
-        const sqlStr = `select count(*) as count from ev_videos where ${stateSql} and ${is_deleteSql} and ${timeSql} and ${valSql}`
+        const sqlStr = `select count(*) as count from ev_videos ev_v join ev_users ev_u on ev_v.user_id=ev_u.id where ${stateSql} and ${is_deleteSql} and ${timeSql} and ${valSql}`
         db.query(sqlStr, (err, results) => {
             if(err) return res.cc(err)
             res.send({
