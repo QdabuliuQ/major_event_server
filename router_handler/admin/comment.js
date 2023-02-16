@@ -22,10 +22,9 @@ exports.getCommentList = (req, res) => {
     }
 
     let val = req.query.val ? req.query.val : ''
-    let valSql = `(ev_c.comment_id like '%${val}%' or ev_c.content like '%${val}%' or ev_c.nickname like '%${val}%' or ev_c.user_id like '%${val}%' or ev_cr.art_id like '%${val}%')`
+    let valSql = `(ev_c.comment_id like '%${val}%' or ev_c.content like '%${val}%' or ev_u.nickname like '%${val}%' or ev_u.id like '%${val}%' or ev_cr.art_id like '%${val}%')`
 
-    const sqlStr = `select *, (select count(*) - 1 from ev_article_comment_record ev_cr where ev_cr.parent_id = ev_c.comment_id) as reply, (select count(IF(ev_cr.parent_id = ev_cpr.comment_id,true,null)) from ev_article_comment_praise_record ev_cpr) as praise from ev_article_comment_record ev_cr join ev_article_comment ev_c on ev_cr.parent_id = ev_c.comment_id where ev_cr.child_id is null and ${is_deleteSql} and ${timeSql} and ${valSql} order by ev_cr.time desc limit ?,?`
-    console.log(sqlStr)
+    const sqlStr = `select *, (select count(*) - 1 from ev_article_comment_record ev_cr where ev_cr.parent_id = ev_c.comment_id) as reply, (select count(IF(ev_cr.parent_id = ev_cpr.comment_id,true,null)) from ev_article_comment_praise_record ev_cpr) as praise from ev_article_comment_record ev_cr join ev_article_comment ev_c on ev_cr.parent_id = ev_c.comment_id inner join ev_users ev_u on ev_c.user_id=ev_u.id where ev_cr.child_id is null and ${is_deleteSql} and ${timeSql} and ${valSql} order by ev_cr.time desc limit ?,?`
     db.query(sqlStr, [
         (parseInt(req.query.offset)-1)*pageSize,
         pageSize

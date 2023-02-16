@@ -1,13 +1,14 @@
 const express = require('express')
 const expressJoi = require('@escook/express-joi')
 const {
-    add_article_report_schema,
+    add_report_schema,
     add_comment_report_schema
 } = require('../../schema/client/s_report')
 const {
-    addArticleReport,
+    addReport,
     addCommentReport,
     getArticleReportList,
+    getVideoReportList,
     getCommentReportList,
     getArticleReportDetail
 } = require('../../router_handler/client/h_report')
@@ -15,7 +16,7 @@ const { getReportReason } = require("../../router_handler/admin/report");
 const router = express.Router()
 
 // 举报文章
-router.post('/addArticleReport', expressJoi(add_article_report_schema), addArticleReport)
+router.post('/addReport', expressJoi(add_report_schema), addReport)
 
 // 获取举报理由
 router.get('/getReportReason', getReportReason)
@@ -25,6 +26,9 @@ router.post('/addCommentReport', expressJoi(add_comment_report_schema), addComme
 
 // 获取文章举报记录
 router.get('/getArticleReportList', getArticleReportList)
+
+// 获取视频举报记录
+router.get('/getVideoReportList', getVideoReportList)
 
 // 获取评论举报记录
 router.get('/getCommentReportList', getCommentReportList)

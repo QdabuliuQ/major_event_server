@@ -26,7 +26,7 @@ exports.pubVideo = (req, res) => {
 }
 
 exports.getVideoList = (req, res) => {
-    const sqlStr = `select ev_v.*, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id) as praise_count, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_praise, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id) as collect_count, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_collect, (select count(*) from ev_video_comment ev_vc where ev_vc.video_id = ev_v.id) as comment_count from ev_videos ev_v join ev_users ev_u on ev_v.user_id=ev_u.id where state = '2' and ev_v.is_delete = '0' order by ev_v.time desc limit ?,?`
+    const sqlStr = `select ev_v.*, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id) as praise_count, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_praise, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id) as collect_count, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_collect, (select count(*) from ev_video_comment ev_vc where ev_vc.video_id = ev_v.id) as comment_count from ev_videos ev_v join ev_users ev_u on ev_v.user_id=ev_u.id where state = '2' order by ev_v.time desc limit ?,?`
     db.query(sqlStr, [
         (parseInt(req.query.offset)-1)*pageSize,
         pageSize
@@ -139,7 +139,6 @@ exports.pubVideoComment = (req, res) => {
 exports.getVideoComment = (req, res) => {
     let ps = req.query.pageSize ? parseInt(req.query.pageSize) : pageSize
     const sqlStr = `select ev_vc.*, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_comment_praise_record ev_vcpr where ev_vcpr.comment_id=ev_vc.comment_id) as praise_count, (select count(*) from ev_video_comment_praise_record ev_vcpr where ev_vcpr.comment_id=ev_vc.comment_id and ev_vcpr.user_id='${req.user.id}') as is_praise from ev_video_comment ev_vc join ev_users ev_u on ev_vc.user_id = ev_u.id where ev_vc.video_id = ? ${req.u_type === 'client' ? 'and ev_vc.is_delete = "0"' : ''} order by ev_vc.time desc limit ?,?`
-    console.log(req.u_type)
     db.query(sqlStr, [
         req.query.video_id,
         (parseInt(req.query.offset)-1)*ps,

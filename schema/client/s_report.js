@@ -1,11 +1,13 @@
 const joi = require('joi')
 
-exports.add_article_report_schema = {
+exports.add_report_schema = {
     body: {
         reason: joi.string().required().max(20),
         desc: joi.string().required().max(200),
-        proof: joi.string(),
-        art_id: joi.string().required()
+        proof: joi.string().allow(null, ''),
+        id: joi.string().required(),
+        // 1 文章举报   2 视频举报
+        type: joi.string().valid('1', '2').required()
     }
 }
 

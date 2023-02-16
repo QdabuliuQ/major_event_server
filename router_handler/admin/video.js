@@ -5,17 +5,12 @@ const {
 } = require('../../tools')
 
 exports.getVideoList = (req, res) => {
-    let { stateSql, is_deleteSql, timeSql, valSql } = createConditionSql([
+    let { stateSql, timeSql, valSql } = createConditionSql([
         {
                 prefix: 'ev_v',
                 name: 'state',
                 type: 'eval',
                 t: 'string',
-        },{
-            prefix: 'ev_v',
-            name: 'is_delete',
-            type: 'eval',
-            t: 'string'
         },{
             prefix: 'ev_v',
             name: 'time',
@@ -30,7 +25,7 @@ exports.getVideoList = (req, res) => {
         req.query
     )
 
-    const sqlStr = `select ev_v.*, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id) as praise_count, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id) as collect_count from ev_videos ev_v join ev_users ev_u on ev_v.user_id=ev_u.id where ${stateSql} and ${is_deleteSql} and ${timeSql} and ${valSql} order by ev_v.time desc limit ?,?`
+    const sqlStr = `select ev_v.*, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id) as praise_count, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id) as collect_count from ev_videos ev_v join ev_users ev_u on ev_v.user_id=ev_u.id where ${stateSql} and ${timeSql} and ${valSql} order by ev_v.time desc limit ?,?`
     db.query(sqlStr, [
         (parseInt(req.query.offset)-1)*pageSize,
         pageSize
@@ -42,7 +37,7 @@ exports.getVideoList = (req, res) => {
             item.user_pic = oss + item.user_pic
         }
         let data = results
-        const sqlStr = `select count(*) as count from ev_videos ev_v join ev_users ev_u on ev_v.user_id=ev_u.id where ${stateSql} and ${is_deleteSql} and ${timeSql} and ${valSql}`
+        const sqlStr = `select count(*) as count from ev_videos ev_v join ev_users ev_u on ev_v.user_id=ev_u.id where ${stateSql} and ${timeSql} and ${valSql}`
         db.query(sqlStr, (err, results) => {
             if(err) return res.cc(err)
             res.send({
@@ -58,15 +53,24 @@ exports.getVideoList = (req, res) => {
 
 // 通过/封禁视频
 exports.updateVideoState = (req, res) => {
-    const sqlStr = 'update ev_videos set state = ? where id = ?'
-    db.query(sqlStr, [
-        req.body.state,
-        req.body.id
-    ], (err, results) => {
+    const sqlStr = `select * from ev_videos where id = ?`
+    db.query(sqlStr, req.body.id, (err, results) => {
         if(err) return res.cc(err)
-        if(results.affectedRows != 1) return res.cc('更新审核状态失败')
-        res.cc('更新审核状态成功', 0)
+        if(results.length != 1) return res.cc('更新视频状态失败')
+        if(results[0].state == '4') res.cc('更新视频状态失败')
+
+        const sqlStr = 'update ev_videos set state = ? where id = ?'
+        db.query(sqlStr, [
+            req.body.state,
+            req.body.id
+        ], (err, results) => {
+            if(err) return res.cc(err)
+            if(results.affectedRows != 1) return res.cc('更新审核状态失败')
+            res.cc('更新审核状态成功', 0)
+        })
     })
+
+
 }
 
 // 获取视频点赞用户
