@@ -1,6 +1,6 @@
 const db = require('../../db/index')
 const {
-    oss
+    oss, pageSize
 } = require('../../config')
 const {
     uuid,
@@ -167,13 +167,16 @@ exports.praiseArticle = (req, res) => {
             return res.cc('网络错误')
         }
 
-        const sqlStr = req.body.is_praise == 1 ? `insert into ev_article_praise_record set ?` : `delete from ev_article_praise_record where user_id='${req.user.id}' and art_id='${req.body.id}'`
-        db.query(sqlStr, {
+        const sqlStr = req.body.is_praise == 1 ? `insert into ev_article_praise_record set ?` : `delete from ev_article_praise_record where user_id=? and art_id=?`
+        db.query(sqlStr, req.body.is_praise == 1 ? {
             record_id: 'p_'+uuid(32),
             user_id: req.user.id,
             art_id: req.body.id,
             time: Date.now()
-        }, (err, results) => {
+        } : [
+            req.user.id,
+            req.body.id
+        ], (err, results) => {
             if(results.affectedRows != 1) return res.cc('网络错误')
             res.cc('操作成功', 0)
         })
@@ -331,5 +334,65 @@ exports.praiseComment = (req, res) => {
         if(results.affectedRows != 1) return res.cc('操作失败')
 
         res.cc('操作成功', 0)
+    })
+}
+
+exports.getArticleById = (req, res) => {
+    let ps = req.query.pageSize ? parseInt(req.query.pageSize) : pageSize
+    let typeSql = ''
+    switch (req.query.type) {
+        case '1':
+            typeSql = `(ev_a.state='1' and ev_a.is_delete='0')`
+            break;
+        case '2':
+            typeSql = `(ev_a.state='2')`
+            break
+        case '3':
+            typeSql = `(ev_a.is_delete='1')`
+            break
+        default:
+            typeSql = `(ev_a.state <> -999)`
+    }
+
+    const sqlStr = `select ev_a.*, (select count(*) from ev_article_browse_record where art_id=ev_a.id) as browse_count, (select count(*) from ev_article_praise_record where art_id=ev_a.id) as praise_count, (select count(*) from ev_article_comment_record where art_id=ev_a.id and is_delete='0') as comment_count, (select count(*) from ev_article_collect_record where art_id=ev_a.id and is_delete='0') as collect_count from ev_articles ev_a where author_id=? and ${typeSql} order by pub_date desc limit ?,?`
+    db.query(sqlStr, [
+        req.user.id,
+        (parseInt(req.query.offset)-1) * ps,
+        ps
+    ], (err, results) => {
+        if(err) return res.cc(err)
+        for(let item of results) {
+            item.cover_img = oss + item.cover_img
+            item.content = item.content.replace(/<[^>]+>/ig, '')
+        }
+        let data = results
+        const sqlStr = `select count(*) as count from ev_articles ev_a where author_id = ? and is_delete = "0" and ${typeSql}`
+        db.query(sqlStr, req.user.id, (err, results) => {
+            if(err) return res.cc(err)
+            res.send({
+                status: 0,
+                data,
+                msg: '获取文章列表成功',
+                count: results[0].count,
+                more: parseInt(req.query.offset)*ps < results[0].count
+            })
+        })
+    })
+}
+
+exports.deleteArticleById = (req, res) => {
+    const sqlStr = 'select * from ev_articles where id = ? and author_id=? and state = "1" and is_delete = "0"'
+    db.query(sqlStr, [
+        req.body.id,
+        req.user.id
+    ], (err, results) => {
+        if(err) return res.cc(err)
+        if(results.length != 1) return res.cc('操作失败')
+        const sqlStr = 'update ev_articles set is_delete="1" where id=?'
+        db.query(sqlStr, req.body.id, (err, results) => {
+            if(err) return res.cc(err)
+            if(results.affectedRows != 1) return res.cc('操作失败')
+            res.cc('删除成功', 0)
+        })
     })
 }

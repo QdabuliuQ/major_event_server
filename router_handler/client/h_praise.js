@@ -1,6 +1,6 @@
 const db = require('../../db/index')
 const {
-    oss
+    oss, pageSize
 } = require('../../config')
 
 exports.getPraiseList = (req, res) => {

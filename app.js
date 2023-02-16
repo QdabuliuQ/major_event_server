@@ -132,6 +132,8 @@ app.use('/client/rep', require('./router/client/report'))
 app.use('/client/pra', require('./router/client/praise'))
 // 视频模块
 app.use('/client/vid', require('./router/client/video'))
+// 评论模块
+app.use('/client/com', require('./router/client/comment'))
 
 // 上传文件模块
 app.use('/upload', require('./router/upload'))

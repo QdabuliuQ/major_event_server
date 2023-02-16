@@ -7,7 +7,10 @@ const {
     collectVideo,
     pubVideoComment,
     getVideoComment,
-    praiseComment
+    praiseComment,
+    getVideoById,
+    getVideoDetail,
+    deleteVideoById
 } = require('../../router_handler/client/h_video')
 const {
     pub_video_schema,
@@ -34,5 +37,14 @@ router.get('/getVideoComment', getVideoComment)
 
 // 点赞/取消点赞评论
 router.post('/praiseComment', expressJoi(praise_comment_schema), praiseComment)
+
+// 获取视频列表
+router.get('/getVideoById', getVideoById)
+
+// 获取视频详情
+router.get('/getVideoDetail', getVideoDetail)
+
+// 删除视频
+router.post('/deleteVideoById', deleteVideoById)
 
 module.exports = router

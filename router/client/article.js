@@ -12,11 +12,14 @@ const {
     getArticleComment,
     getCommentFloor,
     getCommentDetail,
-    praiseComment
+    praiseComment,
+    getArticleById,
+    deleteArticleById
 } = require('../../router_handler/client/h_article')
 const {
     add_article_schema,
-    pub_article_comment_schema
+    pub_article_comment_schema,
+    delete_article_by_id_schema
 } = require('../../schema/client/s_article')
 
 const router = express.Router()
@@ -55,5 +58,11 @@ router.get('/getCommentFloor', getCommentFloor)
 
 // 点赞评论
 router.post('/praiseComment', praiseComment)
+
+// 获取文章
+router.get('/getArticleById', getArticleById)
+
+// 删除文章
+router.post('/deleteArticleById', expressJoi(delete_article_by_id_schema), deleteArticleById)
 
 module.exports = router

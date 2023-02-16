@@ -26,7 +26,6 @@ exports.pubVideo = (req, res) => {
 }
 
 exports.getVideoList = (req, res) => {
-    let pageSize = 5
     const sqlStr = `select ev_v.*, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id) as praise_count, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_praise, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id) as collect_count, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_collect, (select count(*) from ev_video_comment ev_vc where ev_vc.video_id = ev_v.id) as comment_count from ev_videos ev_v join ev_users ev_u on ev_v.user_id=ev_u.id where state = '2' and ev_v.is_delete = '0' order by ev_v.time desc limit ?,?`
     db.query(sqlStr, [
         (parseInt(req.query.offset)-1)*pageSize,
@@ -73,9 +72,6 @@ exports.praiseVideo = (req, res) => {
             video_id: req.query.video_id,
             user_id: req.user.id,
             time: Date.now(),
-            nickname: req.user.nickname,
-            intro: req.user.intro,
-            user_pic: req.userData.user_pic
         } : [
             req.query.video_id,
             req.user.id
@@ -108,10 +104,7 @@ exports.collectVideo = (req, res) => {
         db.query(sqlStr, is_praise == 1 ? {
             video_id: req.query.video_id,
             user_id: req.user.id,
-            time: Date.now(),
-            nickname: req.user.nickname,
-            intro: req.user.intro,
-            user_pic: req.userData.user_pic
+            time: Date.now()
         } : [
             req.query.video_id,
             req.user.id
@@ -200,6 +193,83 @@ exports.praiseComment = (req, res) => {
             if(err) return res.cc(err)
             if(results.affectedRows != 1) return res.cc('操作失败')
             res.cc('操作成功',0)
+        })
+    })
+}
+
+exports.getVideoById = (req, res) => {
+    let ps = req.query.pageSize ? parseInt(req.query.pageSize) : pageSize
+
+    let stateSql = ''
+    if(!req.query.state || req.query.state == '0') {
+        stateSql = `ev_v.state <> 0`
+    } else {
+        stateSql = `ev_v.state = '${req.query.state}'`
+    }
+
+    const sqlStr = `select *, (select count(*) as count from ev_video_comment where ev_v.id=video_id) as comment_count, (select count(*) as count from ev_video_praise_record where ev_v.id=video_id) as praise_count, (select count(*) as count from ev_video_collect_record where ev_v.id=video_id) as collect_count from ev_videos ev_v where user_id=? and ${stateSql} order by ev_v.time desc limit ?,?`
+    db.query(sqlStr, [
+        req.user.id,
+        (parseInt(req.query.offset)-1)*ps,
+        ps
+    ], (err, results) => {
+        if(err) return res.cc(err)
+        for(let item of results) {
+            item.cover_img = oss + item.cover_img
+            item.video_url = oss + item.video_url
+        }
+        let data = results
+        const sqlStr = `select count(*) as count from ev_videos where user_id = ?`
+        db.query(sqlStr, [
+            req.user.id
+        ], (err, results) => {
+            if(err) return res.cc(err)
+            res.send({
+                status: 0,
+                data,
+                msg: '获取视频列表成功',
+                count: results[0].count,
+                more: parseInt(req.query.offset)*ps < results[0].count
+            })
+        })
+    })
+}
+
+exports.getVideoDetail = (req, res) => {
+    const sqlStr = `select ev_v.*, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id) as praise_count, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_praise, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id) as collect_count, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_collect, (select count(*) from ev_video_comment ev_vc where ev_vc.video_id = ev_v.id) as comment_count from ev_videos ev_v join ev_users ev_u on ev_v.user_id=ev_u.id where state = '2' and ev_v.id=?`
+
+    db.query(sqlStr, req.query.id, (err, results) => {
+        console.log(results)
+        if(err) return res.cc(err)
+        if(results.length != 1) return res.cc('获取视频信息失败')
+        for(let item of results) {
+            item.video_url = oss + item.video_url
+            item.cover_img = oss + item.cover_img
+            item.user_pic = oss + item.user_pic
+        }
+        res.send({
+            status: 0,
+            data: results[0],
+            msg: '获取视频信息成功',
+        })
+    })
+}
+
+// 删除视频
+exports.deleteVideoById = (req, res) => {
+    const sqlStr = 'select * from ev_videos where id=? and user_id=? and state="2"'
+    db.query(sqlStr, [
+        req.body.id,
+        req.user.id
+    ], (err, results) => {
+        if(err) return res.cc(err)
+        if(results.length != 1) return res.cc('删除失败')
+
+        const sqlStr = 'update ev_videos set state="4" where id=?'
+        db.query(sqlStr, req.body.id, (err, results) => {
+            if(err) return res.cc(err)
+            if(results.affectedRows != 1) return res.cc('删除失败')
+            res.cc('删除成功', 0)
         })
     })
 }

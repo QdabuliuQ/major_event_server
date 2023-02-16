@@ -23,3 +23,9 @@ exports.pub_article_comment_schema = {
         content: joi.string().max(100).required()
     }
 }
+
+exports.delete_article_by_id_schema = {
+    body: {
+        id: joi.string().required(),
+    }
+}
