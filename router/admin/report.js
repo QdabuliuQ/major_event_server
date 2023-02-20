@@ -7,7 +7,8 @@ const {
     addReportReason,
     deleteReportReason,
     getCommentReportList,
-    updateCommentReportState
+    updateCommentReportState,
+    getVideoReportList
 } = require('../../router_handler/admin/report')
 const {
     update_report_state_schema,
@@ -35,5 +36,8 @@ router.get('/getCommentReportList', getCommentReportList)
 
 // 更新评论举报状态
 router.post('/updateCommentReportState', expressJoi(update_report_state_schema), updateCommentReportState)
+
+// 获取视频举报列表
+router.get('/getVideoReportList', getVideoReportList)
 
 module.exports = router

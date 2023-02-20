@@ -66,7 +66,7 @@ exports.getReportList = (req, res) => {
 
 // 更新举报状态
 exports.updateReportState = (req, res) => {
-    const sqlStr = 'update ev_article_report set state=? where id=?'
+    const sqlStr = `update ${req.body.type === '1' ? 'ev_article_report' : 'ev_video_report'} set state=? where id=?`
     db.query(sqlStr, [req.body.state, req.body.id], (err, results) => {
         if(err) return res.cc(err)
         if(results.affectedRows != 1) res.cc('操作失败，请重试')
@@ -185,6 +185,64 @@ exports.updateCommentReportState = (req, res) => {
             if(err) return res.cc(err)
             if(results.affectedRows != 1) res.cc('操作失败，请重试')
             res.cc('操作成功', 0)
+        })
+    })
+}
+
+exports.getVideoReportList = (req, res) => {
+    let {reasonSql,stateSql,timeSql,valSql} = createConditionSql([
+        {
+            prefix: 'ev_vr',
+            name: 'reason',
+            type: 'eval',
+            t: 'string',
+        }, {
+            prefix: 'ev_vr',
+            name: 'state',
+            type: 'eval',
+            t: 'string',
+        }, {
+            prefix: 'ev_vr',
+            name: 'time',
+            name_dic1: 'startTime',
+            name_dic2: 'endTime',
+            type: 'range',
+        }, {
+            name: 'val',
+            type: 'like',
+            fields: ['ev_vr.id','ev_vr.video_id','ev_u.id', 'ev_u.nickname', 'ev_vr.desc']
+        }
+    ], req.query)
+    let ps = req.query.pageSize ?  parseInt(req.query.pageSize) : pageSize
+    const sqlStr = `select ev_vr.*, ev_u.nickname, ev_u.user_pic, ev_v.video_url from ev_video_report ev_vr join ev_users ev_u on ev_vr.user_id = ev_u.id inner join ev_videos ev_v on ev_v.id = ev_vr.video_id where ${reasonSql} and ${stateSql} and ${timeSql} and ${valSql} order by ev_vr.time desc limit ?,?`
+    console.log(sqlStr)
+    db.query(sqlStr, [
+        (parseInt(req.query.offset)-1)*ps,
+        ps
+    ], (err, results) => {
+        if(err) return res.cc(err)
+        for(let item of results) {
+            item.user_pic = oss + item.user_pic
+            item.video_url = oss + item.video_url
+            if(item.proof) {
+                item.proof = JSON.parse(item.proof)
+                for(let p of item.proof) {
+                    p.link = oss + p.link
+                }
+            }
+
+        }
+        let data = results
+        const sqlStr = `select count(*) as count from ev_video_report ev_vr join ev_users ev_u on ev_vr.user_id = ev_u.id inner join ev_videos ev_v on ev_v.id = ev_vr.video_id where ${reasonSql} and ${stateSql} and ${stateSql} and ${valSql}`
+        db.query(sqlStr, (err, results) => {
+            if(err) return res.cc(err)
+            res.send({
+                status: 0,
+                data,
+                msg: '获取举报列表成功',
+                count: results[0].count,
+                pageSize: ps,
+            })
         })
     })
 }

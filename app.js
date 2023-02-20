@@ -116,6 +116,8 @@ app.use('/admin/rep', require('./router/admin/report'))
 app.use('/admin/com', require('./router/admin/comment'))
 // 视频模块
 app.use('/admin/vid', require('./router/admin/video'))
+// 首页模块
+app.use('/admin/ind', require('./router/admin/index'))
 
 // 前台模块
 // 用户信息
@@ -134,6 +136,7 @@ app.use('/client/pra', require('./router/client/praise'))
 app.use('/client/vid', require('./router/client/video'))
 // 评论模块
 app.use('/client/com', require('./router/client/comment'))
+
 
 // 上传文件模块
 app.use('/upload', require('./router/upload'))
