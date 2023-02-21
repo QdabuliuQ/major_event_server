@@ -4,7 +4,8 @@ const {
     getBackNoticeList,
     getReceNoticeList,
     getCateData,
-    getUserRegion
+    getUserRegion,
+    getRegisterData
 } = require('../../router_handler/admin/index')
 const router = express.Router()
 
@@ -22,5 +23,10 @@ router.get('/getCateData', getCateData)
 
 // 获取用户分布
 router.get('/getUserRegion', getUserRegion)
+
+// 获取每天用户注册量
+router.get('/getRegisterData', getRegisterData)
+
+//
 
 module.exports = router

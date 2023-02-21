@@ -23,31 +23,54 @@ exports.getWebsiteData = (req, res) => {
 }
 
 exports.getBackNoticeList = (req, res) => {
-    const sqlStr = 'select * from ev_back_notice where status = "1" order by is_top desc, time desc limit 0,8'
-    db.query(sqlStr, (err, results) => {
+    let ps = req.query.pageSize ? parseInt(req.query.pageSize) : 8
+    const sqlStr = `select ev_bn.*, ev_a.name as nickname from ev_back_notice ev_bn join ev_admins ev_a on ev_bn.pub_id = ev_a.admin_id where ev_bn.status = "1" order by ev_bn.is_top desc, ev_bn.time desc limit ?,?`
+    db.query(sqlStr, [
+        (parseInt(req.query.offset)-1)*ps,
+        ps
+    ], (err, results) => {
         if(err) return res.cc(err)
         for(let item of results) {
-            item.content = item.content.replace(/<[^>]+>/ig, '')
+            item.desc = item.content.replace(/<[^>]+>/ig, '')
         }
-        res.send({
-            status: 0,
-            data: results,
-            msg: '获取后台公告成功'
+        let data = results
+        const sqlStr = 'select count(*) as count from ev_back_notice where status = "1"'
+        db.query(sqlStr, (err, results) => {
+            if(err) return res.cc(err)
+            res.send({
+                status: 0,
+                data,
+                msg: '获取后台公告成功',
+                count: results[0].count,
+                pageSize: ps
+            })
         })
+
     })
 }
 
 exports.getReceNoticeList = (req, res) => {
-    const sqlStr = 'select * from ev_rece_notice where status = "1" and app_status="2" order by is_top desc, time desc limit 0,8'
-    db.query(sqlStr, (err, results) => {
+    let ps = req.query.pageSize ? parseInt(req.query.pageSize) : 8
+    const sqlStr = `select ev_rn.*, ev_a.name as nickname from ev_rece_notice ev_rn join ev_admins ev_a on ev_rn.pub_id = ev_a.admin_id where ev_rn.status = "1" and ev_rn.app_status="2" order by ev_rn.is_top desc, ev_rn.time desc limit ?,?`
+    db.query(sqlStr, [
+        (parseInt(req.query.offset)-1)*ps,
+        ps
+    ], (err, results) => {
         if(err) return res.cc(err)
         for(let item of results) {
-            item.content = item.content.replace(/<[^>]+>/ig, '')
+            item.desc = item.content.replace(/<[^>]+>/ig, '')
         }
-        res.send({
-            status: 0,
-            data: results,
-            msg: '获取后台公告成功'
+        let data = results
+        const sqlStr = 'select count(*) as count from ev_rece_notice where status = "1"'
+        db.query(sqlStr, (err, results) => {
+            if(err) return res.cc(err)
+            res.send({
+                status: 0,
+                data,
+                msg: '获取前台公告成功',
+                count: results[0].count,
+                pageSize: ps
+            })
         })
     })
 }
@@ -83,6 +106,18 @@ exports.getUserRegion = (req, res) => {
             status: 0,
             data: results,
             msg: '获取用户分布成功'
+        })
+    })
+}
+
+exports.getRegisterData = (req, res) => {
+    const sqlStr = 'SELECT from_unixtime( time / 1000, "%Y-%m-%d" ) AS days, count(*) as count FROM ev_users GROUP BY days order by time desc'
+    db.query(sqlStr, (err, results) => {
+        if(err) return res.cc(err)
+        res.send({
+            status: 0,
+            data: results,
+            msg: '获取注册数据成功',
         })
     })
 }
