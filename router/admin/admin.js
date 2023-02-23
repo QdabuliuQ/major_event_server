@@ -1,12 +1,11 @@
 const express = require('express')
-const expressJoi = require('@escook/express-joi')
 const {
-    adminLogin,
-    adminUpdateUserPwd
+    adminLogin
 } = require('../../router_handler/admin/admin')
 
 const router = express.Router()
 
+// 登录
 router.post('/adminLogin', adminLogin)
 
 module.exports = router

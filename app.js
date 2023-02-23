@@ -5,6 +5,8 @@ const express = require('express')
 const joi = require('joi')  
 // 解析token
 const expressJWT = require('express-jwt')
+// cookie
+// const cookieParser = require('cookie-parser');
 const config = require('./config')
 const db = require('./db/index')
 
@@ -34,16 +36,19 @@ app.use((req, res, next) => {
   next()
 })
 
+// app.use(cookieParser());
+
 // 在路由之前配置解析token的中间件
 app.use(expressJWT({
   secret: config.jwtSecretKey
 }).unless({  // 排除 /api 开头的接口
-  path: [/^\/admin\/api/, /^\/client\/api/, /^\/public/, /^\/uploads/]
+  path: [/^\/admin\/api/, /^\/client\/api/, /^\/public/, /^\/uploads/, /^\/code\/getCode/]
 }))
 
 app.use((req, res, next) => {
   let baseUrl = req.originalUrl.substring(1).split('/')
   let root = baseUrl[0], url = baseUrl[1]
+  console.log(root)
   if(root == 'client') {
     req.u_type = 'client'
     if(url != 'api') {
@@ -63,7 +68,7 @@ app.use((req, res, next) => {
   } else if(root == 'admin'){
     req.u_type = 'admin'
     if(url != 'api') {
-      const sqlStr = 'select * from ev_admins where admin_id=?'
+      const sqlStr = 'select * from ev_admins where admin_id=? and status = "1"'
       db.query(sqlStr, req.user.admin_id, (err, results) => {
         if(err) return res.cc(err)
         if(results.length != 1) return res.cc('获取用户信息失败', -1)
@@ -74,7 +79,8 @@ app.use((req, res, next) => {
     } else {
       next()
     }
-
+  } else if(root === 'code') {
+    next()
   } else {  // 上传
     let sqlStr = ''
     if(req.user.admin_id) {
@@ -118,6 +124,9 @@ app.use('/admin/com', require('./router/admin/comment'))
 app.use('/admin/vid', require('./router/admin/video'))
 // 首页模块
 app.use('/admin/ind', require('./router/admin/index'))
+
+// 验证码
+app.use('/code', require('./router/code'))
 
 // 前台模块
 // 用户信息

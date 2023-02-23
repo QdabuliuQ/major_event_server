@@ -76,7 +76,8 @@ exports.getReceNoticeList = (req, res) => {
 }
 
 exports.getCateData = (req, res) => {
-    const sqlStr = 'select ev_ac.name, count(*) as count from ev_articles ev_a join ev_article_cate ev_ac on ev_a.cate_id = ev_ac.id where ev_a.state = "1" group by ev_a.cate_id'
+    const sqlStr = 'select ev_ac.name, (select count(*) from ev_articles ev_a where ev_a.state = "1" and ev_a.cate_id = ev_ac.id) as count from ev_article_cate ev_ac'
+    // const sqlStr = 'select ev_ac.name, count(*) as count from ev_articles ev_a join ev_article_cate ev_ac on ev_a.cate_id = ev_ac.id where ev_a.state = "1" group by ev_a.cate_id'
     db.query(sqlStr, (err, results) => {
         if(err) return res.cc(err)
         res.send({
