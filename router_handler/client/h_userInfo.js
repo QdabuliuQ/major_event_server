@@ -24,8 +24,18 @@ exports.updateUserInfo = (req, res) => {
     db.query(sqlStr, body, (err, results) => {
         if(err) return res.cc(err)
         if(results.affectedRows != 1) return res.cc('更新用户信息失败')
-
-        res.cc('更新用户信息成功', 0)
+        const sqlStr = 'select * from ev_users where id = ?'
+        db.query(sqlStr, req.user.id, (err, results) => {
+            if(err) return res.cc(err)
+            delete results[0].password
+            results[0].user_pic = oss + results[0].user_pic
+            results[0].bg_image = oss + results[0].bg_image
+            res.send({
+                status: 0,
+                msg: '更新用户信息成功',
+                data: results[0]
+            })
+        })
     })
 }
 

@@ -50,7 +50,7 @@ exports.loginUser = (req, res) => {
         if(err) return res.cc(err)
         // 判断是否存在用户
         if(results.length != 1) return res.cc('账号或密码错误')
-
+        if(results[0].status == 2) return res.cc('账号被封禁')
         // 校验密码是否一致
         // 调用 bcrypt.compareSync 对加密前和加密后的密码进行比较判断
         const compareResult = bcrypt.compareSync(info.password, results[0].password)

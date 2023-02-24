@@ -165,8 +165,7 @@ exports.adminAddAdminInfo = (req, res) => {
 // 更新管理员信息
 exports.adminUpdateAdminInfo = (req, res) => {
     // 查询是否是超级管理员
-    const sqlStr = 'select * from ev_admins where admin_id=? and type=1 and password=?'
-    checkStatus(sqlStr, [req.user.admin_id, req.body.rootPwd], res, () => {
+    if(req.adminData.type == 1) {
         // 判断信息是否重复
         const sqlStr = 'select * from ev_admins where admin_id <> ? and (email=? or phone=?)'
         checkExist(sqlStr, [req.body.admin_id, req.body.email, req.body.phone], '手机号或邮箱已被占用', res, () => {
@@ -180,7 +179,9 @@ exports.adminUpdateAdminInfo = (req, res) => {
                 res.cc('更新管理员信息成功', 0)
             })
         })
-    })
+    } else {
+        res.cc('更新管理员信息失败')
+    }
 }
 
 // 更新管理员密码

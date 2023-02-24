@@ -46,6 +46,13 @@ exports.getArticleCate = (req, res) => {
 
 // 发布文章
 exports.addArticle = (req, res) => {
+    console.log(req.user)
+    if(req.userData.status == '3') {
+        return res.cc('账号以禁言')
+    }
+    if(req.userData.status == '2') {
+        return res.cc('账号以封禁')
+    }
     const sqlStr = 'insert into ev_articles set ?'
     db.query(sqlStr, {
         id: uuid(13),
