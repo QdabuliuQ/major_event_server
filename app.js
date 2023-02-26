@@ -145,7 +145,8 @@ app.use('/client/pra', require('./router/client/praise'))
 app.use('/client/vid', require('./router/client/video'))
 // 评论模块
 app.use('/client/com', require('./router/client/comment'))
-
+// 搜索模块
+app.use('/client/sea', require('./router/client/search'))
 
 // 上传文件模块
 app.use('/upload', require('./router/upload'))

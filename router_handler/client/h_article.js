@@ -137,7 +137,7 @@ exports.getArticleList = (req, res) => {
     } else {
         whereSql = `cate_id<>'-1'`
     }
-    const sqlStr = `select * from ev_articles where ${whereSql} and state="1" and is_delete=0 order by pub_date desc ${offsetSql}`
+    const sqlStr = `select * from ev_articles where ${whereSql} and state="1" order by pub_date desc ${offsetSql}`
     db.query(sqlStr, (err, results) => {
         if(err) return res.cc(err)
         for(let item of results) {
