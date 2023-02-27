@@ -8,7 +8,9 @@ const {
     getUserCollectById,
     updateFollowUser,
     getUserFollow,
-    getUserFans
+    getUserFans,
+    getUserVideoById,
+    getUserCollectVideoById
 } = require('../../router_handler/client/h_userInfo')
 const {
     update_user_info_schema,
@@ -31,6 +33,12 @@ router.get('/getUserArticleById', getUserArticleById)
 
 // 获取用户收藏文章
 router.get('/getUserCollectById', getUserCollectById)
+
+// 获取用户收藏视频
+router.get('/getUserCollectVideoById', getUserCollectVideoById)
+
+// 获取用户发布视频
+router.get('/getUserVideoById', getUserVideoById)
 
 // 关注/取消关注用户
 router.post('/updateFollowUser', expressJoi(update_follow_user_schema), updateFollowUser)

@@ -116,6 +116,61 @@ exports.getUserCollectById = (req, res) => {
     })
 }
 
+exports.getUserVideoById = (req, res) => {
+    let ps = req.query.pageSize ? parseInt(req.query.pageSize) : pageSize
+    const sqlStr = `select ev_v.*, ev_u.user_pic, ev_u.nickname from ev_videos ev_v join ev_users ev_u on ev_v.user_id = ev_u.id where ev_v.state = "2" and user_id=? limit ?,?; select count(*) as count from ev_videos ev_v where state="2" and user_id=?`;
+
+    db.query(sqlStr, [
+        req.query.id,
+        (parseInt(req.query.offset)-1)*ps,
+        ps,
+        req.query.id
+    ], (err, results) => {
+        if(err) return res.cc(err)
+        if(results.length != 2) return res.cc('获取失败')
+        for(let item of results[0]) {
+            item.cover_img = oss + item.cover_img
+            item.user_pic = oss + item.user_pic
+            delete item.video_url
+        }
+        let count = results[1][0].count
+        res.send({
+            status: 0,
+            data: results[0],
+            count,
+            pageSize: ps,
+            more: parseInt(req.query.offset)*ps < count
+        })
+    })
+}
+
+exports.getUserCollectVideoById = (req, res) => {
+    let ps = req.query.pageSize ? parseInt(req.query.pageSize) : pageSize
+    const sqlStr = 'select ev_c.*, ev_v.*, ev_u.nickname, ev_u.user_pic from ev_video_collect_record ev_c join ev_videos ev_v on ev_c.video_id = ev_v.id inner join ev_users ev_u on ev_v.user_id = ev_u.id where ev_c.user_id=? order by ev_c.time desc limit ?,?; select count(*) as count from ev_video_collect_record where user_id = ?'
+    db.query(sqlStr, [
+        req.query.id,
+        (parseInt(req.query.offset)-1)*ps,
+        ps,
+        req.query.id
+    ], (err, results) => {
+        if(err) return res.cc(err)
+        if(results.length != 2) return res.cc('获取失败')
+        for(let item of results[0]) {
+            item.cover_img = oss + item.cover_img
+            item.user_pic = oss + item.user_pic
+            delete item.video_url
+        }
+        let count = results[1][0].count
+        res.send({
+            status: 0,
+            data: results[0],
+            count,
+            pageSize: ps,
+            more: parseInt(req.query.offset)*ps < count
+        })
+    })
+}
+
 // 关注/取消关注用户
 exports.updateFollowUser = (req, res) => {
     if(req.body.follow_id == req.user.id) return res.cc('操作失败')
