@@ -1,6 +1,6 @@
 const db = require('../../db/index')
 const bcrypt = require('bcryptjs')  // 密码校验
-const { uuid, cutUrl } = require("../../tools");
+const { uuid } = require("../../tools");
 const jwt = require("jsonwebtoken");
 const config = require("../../config");
 
@@ -69,6 +69,30 @@ exports.loginUser = (req, res) => {
             id: results[0].id,
             // token拼接
             token: 'Bearer ' + tokenStr
+        })
+    })
+}
+
+exports.forgetPassword = (req, res) => {
+    if(req.body.password != req.body.re_password) return res.cc('密码输入不相同')
+    const sqlStr = 'select * from ev_users where email = ? and phone = ? and status = "1"'
+    db.query(sqlStr, [
+        req.body.email,
+        req.body.phone,
+    ], (err, results) => {
+        if(err) return res.cc(err)
+        if(results.length != 1) return res.cc('手机号或者邮箱错误')
+        // 加密
+        let newPassword = bcrypt.hashSync(req.body.password, 8)
+        const sqlStr = 'update ev_users set password = ? where email = ? and phone = ?'
+        db.query(sqlStr, [
+            newPassword,
+            req.body.email,
+            req.body.phone,
+        ], (err, results) => {
+            if(err) return res.cc(err)
+            if(results.affectedRows != 1) return res.cc('修改失败')
+            res.cc('修改成功', 0)
         })
     })
 }

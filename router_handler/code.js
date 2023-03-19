@@ -6,14 +6,17 @@ const getCaptcha = (req, res) => {
         // 翻转颜色
         inverse: false,
         // 字体大小
-        fontSize: 36,
+        fontSize: 46,
+        // 忽略字符
+        ignoreChars: '0o1il',
         // 噪声线条数
         noise: 2,
         // 宽度
         width: 80,
         // 高度
         height: 30,
-        background: '#e9e9e9'
+        color: true,
+        background: '#666'
     });
     // 保存到session,忽略大小写
     req.session = captcha.text.toLowerCase();
