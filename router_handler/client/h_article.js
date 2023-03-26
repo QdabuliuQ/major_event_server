@@ -48,7 +48,7 @@ exports.getArticleCate = (req, res) => {
 exports.addArticle = (req, res) => {
     console.log(req.user)
     if(req.userData.status == '3') {
-        return res.cc('账号以禁言')
+        return res.cc('账号禁言中')
     }
     if(req.userData.status == '2') {
         return res.cc('账号以封禁')
@@ -219,9 +219,10 @@ exports.collectArticle = (req, res) => {
 
 // 发表文章评论
 exports.pubArticleComment = (req, res) => {
+	if(req.userData.status == 3) return res.cc('账号禁言中')
     let content = req.body.content.trim()
     if(content == '' || content.length > 100) return res.cc('发表评论失败')
-    // 记录sql
+	// 记录sql
     const sqlStr = 'insert into ev_article_comment_record set ?'
     let p_id = req.body.parent_id ? req.body.parent_id : uuid(24)
     let c_id = req.body.parent_id ? uuid(24) : null

@@ -39,7 +39,7 @@ router.post('/getReceNotice', getReceNotice)
 // 审核前台公告
 router.post('/updateNoticeAppStatus', expressJoi(update_notice_status_schema), updateNoticeAppStatus)
 
-// 获取后台公告详情
+// 获取前台公告详情
 router.post('/getReceNoticeDetail', getReceNoticeDetail)
 
 // 修改后台公告

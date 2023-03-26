@@ -61,7 +61,7 @@ exports.getReceNoticeList = (req, res) => {
             item.desc = item.content.replace(/<[^>]+>/ig, '')
         }
         let data = results
-        const sqlStr = 'select count(*) as count from ev_rece_notice where status = "1"'
+        const sqlStr = 'select count(*) as count from ev_rece_notice where status = "1" and app_status="2"'
         db.query(sqlStr, (err, results) => {
             if(err) return res.cc(err)
             res.send({

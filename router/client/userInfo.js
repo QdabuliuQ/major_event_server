@@ -13,6 +13,12 @@ const {
     getUserCollectVideoById
 } = require('../../router_handler/client/h_userInfo')
 const {
+	getReceNoticeList
+} = require('../../router_handler/admin/index')
+const {
+	getReceNoticeDetail
+} = require('../../router_handler/admin/notice')
+const {
     update_user_info_schema,
     update_follow_user_schema
 } = require('../../schema/client/s_userInfo')
@@ -48,5 +54,11 @@ router.get('/getUserFollow', getUserFollow)
 
 // 获取用户粉丝
 router.get('/getUserFans', getUserFans)
+
+// 获取前台公告
+router.get('/getReceNoticeList', getReceNoticeList)
+
+// 获取公告详情
+router.post('/getReceNoticeDetail', getReceNoticeDetail)
 
 module.exports = router

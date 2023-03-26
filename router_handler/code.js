@@ -16,7 +16,7 @@ const getCaptcha = (req, res) => {
         // 高度
         height: 30,
         color: true,
-        background: '#666'
+        background: '#fff'
     });
     // 保存到session,忽略大小写
     req.session = captcha.text.toLowerCase();

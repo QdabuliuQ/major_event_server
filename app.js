@@ -147,6 +147,8 @@ app.use('/client/vid', require('./router/client/video'))
 app.use('/client/com', require('./router/client/comment'))
 // 搜索模块
 app.use('/client/sea', require('./router/client/search'))
+// 聊天模块
+app.use('/client/chat', require('./router/client/chat'))
 
 // 上传文件模块
 app.use('/upload', require('./router/upload'))
