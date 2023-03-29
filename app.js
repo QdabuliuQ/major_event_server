@@ -10,8 +10,28 @@ const expressJWT = require('express-jwt')
 const config = require('./config')
 const db = require('./db/index')
 
+
+
 // 创建服务器实例对象
 const app = express()
+const express_ws = require('express-ws');
+const wsObj = {};
+express_ws(app);
+app.ws('/socketServer/:uid', (ws, req) => {
+    const uid = req.params.uid;
+    wsObj[uid] = ws;
+    ws.onmessage = (msg) => {
+		console.log(msg)
+        let data = JSON.parse(msg.data);
+        const fromId = uid;
+        if (fromId != data.to_id && wsObj[data.to_id]) {
+			
+            // wsObj[to_id]   表示 接收方 与服务器的那条连接
+            // wsObj[fromId] 表示 发送方 与服务器的那条连接
+            wsObj[data.to_id].send(msg.data)
+        }
+    }
+});
 
 // 导入并配置cors中间件
 const cors = require('cors')
