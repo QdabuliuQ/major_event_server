@@ -54,12 +54,11 @@ exports.addCommentReport = (req, res) => {
 
 // 获取文章举报记录
 exports.getArticleReportList = (req, res) => {
-    let pageSize = 3
     const sqlStr = `select ev_ar.*, ev_a.cover_img, ev_a.title, ev_a.content from ev_article_report ev_ar join ev_articles ev_a on ev_ar.art_id = ev_a.id where user_id = ? order by ev_ar.time desc limit ?,?`
     db.query(sqlStr, [
         req.user.id,
         (parseInt(req.query.offset)-1)*pageSize,
-        pageSize
+        30
     ], (err, results) => {
         if(err) return res.cc(err)
         for(let item of results) {
@@ -69,13 +68,12 @@ exports.getArticleReportList = (req, res) => {
         let data = results
         const sqlStr = 'select count(*) as count from ev_article_report where user_id = ?'
         db.query(sqlStr, req.user.id, (err, results) => {
-            console.log(pageSize)
             if(err) return res.cc(err)
             res.send({
                 status: 0,
                 data,
                 count: results[0].count,
-                more: parseInt(req.query.offset)*pageSize < results[0].count,
+                more: parseInt(req.query.offset)*30 < results[0].count,
                 msg: '获取举报文章成功'
             })
         })
@@ -84,8 +82,8 @@ exports.getArticleReportList = (req, res) => {
 
 // 获取评论举报记录
 exports.getCommentReportList = (req, res) => {
+	let pageSize = 30
     const sqlStr = `select ev_cr.*, if(ev_cr.type = '1', ev_ac.content, ev_vc.content) as content from ev_comment_report ev_cr LEFT JOIN ev_article_comment ev_ac ON ev_cr.comment_id = ev_ac.comment_id AND ev_cr.type = "1" LEFT JOIN ev_video_comment ev_vc ON ev_cr.comment_id = ev_vc.comment_id AND ev_cr.type = "2" where ev_cr.user_id=? order by ev_cr.time desc limit ?,?`
-    console.log(sqlStr)
     db.query(sqlStr, [
         req.user.id,
         (parseInt(req.query.offset)-1)*pageSize,
@@ -109,12 +107,11 @@ exports.getCommentReportList = (req, res) => {
 }
 
 exports.getVideoReportList = (req, res) => {
-    let pageSize = 3
     const sqlStr = `select ev_vr.*, ev_v.cover_img, ev_v.title, ev_v.time as pub_date from ev_video_report ev_vr join ev_videos ev_v on ev_vr.video_id = ev_v.id where ev_vr.user_id = ? order by ev_vr.time desc limit ?,?`
     db.query(sqlStr, [
         req.user.id,
-        (parseInt(req.query.offset)-1)*pageSize,
-        pageSize
+        (parseInt(req.query.offset)-1)*30,
+        30
     ], (err, results) => {
         if(err) return res.cc(err)
         for(let item of results) {
@@ -128,7 +125,7 @@ exports.getVideoReportList = (req, res) => {
                 status: 0,
                 data,
                 count: results[0].count,
-                more: parseInt(req.query.offset)*pageSize < results[0].count,
+                more: parseInt(req.query.offset)*30 < results[0].count,
                 msg: '获取举报视频成功'
             })
         })
@@ -177,5 +174,32 @@ exports.addMessageReport = (req, res) => {
 	        if(results.affectedRows != 1) return res.cc('举报失败')
 	        res.cc('提交成功', 0)
 	    })
+	})
+}
+
+exports.getMessageReportList = (req, res) => {
+	let ps = 30
+	const sqlStr = 'select ev_mr.*, ev_ml.type, ev_ml.resource, ev_u.nickname, ev_u.user_pic from ev_message_report ev_mr join ev_message_list ev_ml on ev_mr.msg_id = ev_ml.msg_id inner join ev_users ev_u on ev_mr.send_id = ev_u.id where ev_mr.user_id = ? limit ?,?'
+	db.query(sqlStr, [
+		req.user.id,
+		(parseInt(req.query.offset)-1)*ps,
+		ps
+	], (err, results) => {
+		if(err) return res.cc(err)
+		for(let item of results) {
+			item.user_pic = oss + item.user_pic
+		}
+		let data = results
+		const sqlStr = 'select count(*) as count from ev_message_report ev_mr where ev_mr.user_id = ?'
+		db.query(sqlStr, req.user.id, (err, results) => {
+			let count = results[0].count
+			res.send({
+				status: 0,
+				data,
+				count,
+				more: parseInt(req.query.offset)*ps < count,
+				msg: '获取成功'
+			})
+		})
 	})
 }

@@ -12,7 +12,8 @@ const {
     getVideoReportList,
     getCommentReportList,
     getArticleReportDetail,
-	addMessageReport
+	addMessageReport,
+	getMessageReportList
 } = require('../../router_handler/client/h_report')
 const { getReportReason } = require("../../router_handler/admin/report");
 const router = express.Router()
@@ -40,5 +41,8 @@ router.get('/getArticleReportDetail/:id', getArticleReportDetail)
 
 // 举报消息
 router.post('/addMessageReport', expressJoi(add_message_report_schema), addMessageReport)
+
+// 获取消息举报记录
+router.get('/getMessageReportList', getMessageReportList)
 
 module.exports = router
