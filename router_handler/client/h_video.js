@@ -95,7 +95,7 @@ exports.collectVideo = (req, res) => {
         if(err) return res.cc(err)
         let is_praise = req.query.is_praise
         if(is_praise == 1 && results.length === 1) {
-            return res.cc('网络错误')
+            return res.cc('已收藏', 0)
         }
         if(is_praise == 0 && results.length === 0) {
             return res.cc('网络错误')

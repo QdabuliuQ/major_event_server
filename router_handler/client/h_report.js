@@ -35,9 +35,7 @@ exports.addCommentReport = (req, res) => {
     const sqlStr = req.body.type == '1' ? 'select * from ev_article_comment where comment_id=? and is_delete="0"' : 'select * from ev_video_comment where comment_id=? and is_delete="0"'
     db.query(sqlStr, req.body.comment_id, (err, results) => {
         if(err) return res.cc(err)
-
         if(results.length != 1) return res.cc('举报失败')
-
         const sqlStr = 'insert into ev_comment_report set ?'
         db.query(sqlStr, {
             id: 'r_c'+ uuid(16),
@@ -155,4 +153,29 @@ exports.getArticleReportDetail = (req, res) => {
             msg: '获取举报详情成功',
         })
     })
+}
+
+exports.addMessageReport = (req, res) => {
+	const sqlStr = 'select * from ev_message_report where msg_id=? and user_id=? and state="1";select count(*) as count from ev_users where id=?'
+	db.query(sqlStr, [
+		req.body.msg_id,
+		req.user.id,
+		req.body.send_id
+	], (err, results) => {
+	    if(err) return res.cc(err)
+		if(results[0].length == 1) return res.cc('举报审核中', 0)
+	    if(results[1][0].count != 1) return res.cc('举报失败')
+	    const sqlStr = 'insert into ev_message_report set ?'
+	    db.query(sqlStr, {
+	        user_id: req.user.id,
+	        msg_id: req.body.msg_id,
+	        reason: req.body.reason,
+	        time: Date.now(),
+			send_id: req.body.send_id
+	    }, (err, results) => {
+	        if(err) return res.cc(err)
+	        if(results.affectedRows != 1) return res.cc('举报失败')
+	        res.cc('提交成功', 0)
+	    })
+	})
 }

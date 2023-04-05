@@ -2,7 +2,8 @@ const express = require('express')
 const expressJoi = require('@escook/express-joi')
 const {
     add_report_schema,
-    add_comment_report_schema
+    add_comment_report_schema,
+	add_message_report_schema
 } = require('../../schema/client/s_report')
 const {
     addReport,
@@ -10,7 +11,8 @@ const {
     getArticleReportList,
     getVideoReportList,
     getCommentReportList,
-    getArticleReportDetail
+    getArticleReportDetail,
+	addMessageReport
 } = require('../../router_handler/client/h_report')
 const { getReportReason } = require("../../router_handler/admin/report");
 const router = express.Router()
@@ -35,5 +37,8 @@ router.get('/getCommentReportList', getCommentReportList)
 
 // 获取举报详情
 router.get('/getArticleReportDetail/:id', getArticleReportDetail)
+
+// 举报消息
+router.post('/addMessageReport', expressJoi(add_message_report_schema), addMessageReport)
 
 module.exports = router

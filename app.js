@@ -21,7 +21,6 @@ app.ws('/socketServer/:uid', (ws, req) => {
     const uid = req.params.uid;
     wsObj[uid] = ws;
     ws.onmessage = (msg) => {
-		console.log(msg)
         let data = JSON.parse(msg.data);
         const fromId = uid;
         if (fromId != data.to_id && wsObj[data.to_id]) {

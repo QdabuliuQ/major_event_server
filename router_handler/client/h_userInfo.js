@@ -205,10 +205,10 @@ exports.updateFollowUser = (req, res) => {
 
 // 获取用户关注
 exports.getUserFollow = (req, res) => {
-    const sqlStr = `select ev_u.id, ev_u.nickname, ev_u.user_pic, ev_u.intro, (select count(*) from ev_user_follow ev_uf_2 where ev_uf_2.follow_id = ev_u.id and ev_uf_2.user_id = '${req.user.id}') as is_follow from ev_user_follow ev_uf join ev_users ev_u on ev_uf.follow_id = ev_u.id where ev_uf.user_id = ? order by ev_uf.time desc limit ?,?`
-
+	let val = req.query.val ? `and ev_u.nickname like '%${req.query.val}%'` : `and ev_u.nickname like '%%'`
+    const sqlStr = `select ev_u.id, ev_u.nickname, ev_u.user_pic, ev_u.intro, (select count(*) from ev_user_follow ev_uf_2 where ev_uf_2.follow_id = ev_u.id and ev_uf_2.user_id = '${req.user.id}') as is_follow from ev_user_follow ev_uf join ev_users ev_u on ev_uf.follow_id = ev_u.id where ev_uf.user_id = ? ${val} order by ev_uf.time desc limit ?,?`
+     
     db.query(sqlStr, [
-        // req.user.id,
         req.query.id,
         (parseInt(req.query.offset)-1) * pageSize,
         pageSize
@@ -218,7 +218,8 @@ exports.getUserFollow = (req, res) => {
             item.user_pic = oss + item.user_pic
         }
         let data = results
-        const sqlStr = `select count(*) as count from ev_user_follow where user_id = '${req.query.id}'`
+        const sqlStr = `select count(*) as count from ev_user_follow ev_uf join ev_users ev_u on ev_uf.follow_id = ev_u.id where user_id = '${req.query.id}' ${val}`
+		console.log(sqlStr)
         db.query(sqlStr, (err, results) => {
             let count = results && results.length ? results[0].count : 0
             res.send({

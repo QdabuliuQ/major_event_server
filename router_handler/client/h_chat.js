@@ -74,22 +74,16 @@ exports.addMessageRecord = (req, res) => {
 			res.send({
 				status: 0,
 				msg: '发送成功',
-				msg_id
+				msg_id,
+				time: Date.now()
 			})
 		})
 	})
 }
 
-const formatData = (type, item) => {
-	switch(type) {
-		case '1':
-			item.cover_img = oss + item.cover_img
-			item.content = item.content.replace(/<[^>]+>/ig, '')
-			break;
-		case '1':
-			item.cover_img = oss + item.cover_img
-			break;
-	}
+const formatData = (item) => {
+	if(item.cover_img) item.cover_img = oss + item.cover_img
+	if(item.content) item.content = item.content.replace(/<[^>]+>/ig, '')
 }
 
 // 获取聊天记录
@@ -100,7 +94,7 @@ exports.getMessageList = (req, res) => {
 	(
 		case ev_ml.type 
 			when '2' then GROUP_CONCAT(JSON_OBJECT('id',ev_a.id, 'title',ev_a.title, 'cover_img', ev_a.cover_img, 'content', ev_a.content))
-			when '3' then GROUP_CONCAT(JSON_OBJECT('id',ev_v.id, 'title',ev_v.title, 'cover_img', ev_v.cover_img, 'duration', ev_v.duration))
+			when '3' then GROUP_CONCAT(JSON_OBJECT('id',ev_v.id, 'title',ev_v.title, 'cover_img', ev_v.cover_img, 'duration', ev_v.duration, 'time', ev_v.time))
 			else null end
  	) as resource_info 
 from 
@@ -145,9 +139,10 @@ order by
 	})
 }
 
+// 获取聊天对象
 exports.getChatObject = (req, res) => {
 	let ps = req.body.pageSize ? parseInt(req.body.pageSize) : pageSize
-	const sqlStr = 'select ev_cl.*, ev_u.nickname, ev_u.user_pic, res.type, res.time as msg_time, res.resource from ev_chat_list ev_cl join ev_users ev_u on ev_u.id = if(ev_cl.user_id = ?, ev_cl.another_id, ev_cl.user_id) inner join (select ev_a.time as time, ev_a.resource as resource, ev_a.room_id as room_id, ev_a.type as type from ev_message_list ev_a left join ev_message_list ev_b on ev_a.room_id=ev_b.room_id and ev_a.time < ev_b.time where ev_b.time is null) res on res.room_id = ev_cl.room_id where user_id = ? or another_id = ? order by msg_time desc limit ?,?'
+	const sqlStr = 'select ev_cl.*, ev_u.nickname, ev_u.user_pic, ev_u.id as u_id, res.type, res.time as msg_time, res.resource from ev_chat_list ev_cl join ev_users ev_u on ev_u.id = if(ev_cl.user_id = ?, ev_cl.another_id, ev_cl.user_id) inner join (select ev_a.time as time, ev_a.resource as resource, ev_a.room_id as room_id, ev_a.type as type from ev_message_list ev_a left join ev_message_list ev_b on ev_a.room_id=ev_b.room_id and ev_a.time < ev_b.time where ev_b.time is null) res on res.room_id = ev_cl.room_id where user_id = ? or another_id = ? order by msg_time desc limit ?,?'
 	db.query(sqlStr, [
 		req.user.id,
 		req.user.id,
@@ -177,4 +172,3 @@ exports.getChatObject = (req, res) => {
 		
 	})
 }
-// SELECT ev_cl.*, ev_u.nickname, ev_u.user_pic, res.type, res.resource from ev_chat_list ev_cl join ev_users ev_u on ev_u.id = if(ev_cl.user_id = 'B2CF0FDF17', ev_cl.another_id, ev_cl.user_id) inner join (select max(time), type, resource, room_id from ev_message_list ev_ml group by ev_ml.room_id) res on res.room_id = ev_cl.room_id where user_id = 'B2CF0FDF17' or another_id = 'B2CF0FDF17' group by ev_cl.room_id

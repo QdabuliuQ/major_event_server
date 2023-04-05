@@ -197,7 +197,7 @@ exports.collectArticle = (req, res) => {
         if(err) return res.cc(err)
         // 收藏 并且存在收藏记录的情况下
         if(req.body.is_collect == 1 && results.length) {
-            return res.cc('网络错误')
+            return res.cc('已收藏', 0)
         }
         // 取消收藏 并且不存在收藏记录的情况下
         if(req.body.is_collect == 0 && !results.length) {
@@ -252,7 +252,9 @@ exports.pubArticleComment = (req, res) => {
 
 // 获取文章评论
 exports.getArticleComment = (req, res) => {
-    const sqlStr = `select *, ev_u.nickname, ev_u.user_pic, (select count(*) - 1 from ev_article_comment_record ev_cr where ev_cr.parent_id = ev_c.comment_id) as reply, (select count(IF(ev_cr.parent_id = ev_cpr.comment_id,true,null)) from ev_article_comment_praise_record ev_cpr) as praise, (select count(IF(ev_cr.parent_id = ev_cpr.comment_id and ev_cpr.user_id = '${req.user.id}',true,null)) from ev_article_comment_praise_record ev_cpr) as is_praise from ev_article_comment_record ev_cr join ev_article_comment ev_c on ev_cr.parent_id = ev_c.comment_id inner join ev_users ev_u on ev_c.user_id = ev_u.id where ev_cr.art_id=? and ev_c.is_delete='0' and ev_cr.child_id is null order by ev_cr.time desc limit ?, ?`
+	let order = req.query.order == 'new' ? 'ev_cr.time desc' : req.query.order == 'last' ? 'ev_cr.time' : 'praise desc'
+	
+    const sqlStr = `select *, ev_u.nickname, ev_u.user_pic, (select count(*) - 1 from ev_article_comment_record ev_cr where ev_cr.parent_id = ev_c.comment_id) as reply, (select count(IF(ev_cr.parent_id = ev_cpr.comment_id,true,null)) from ev_article_comment_praise_record ev_cpr) as praise, (select count(IF(ev_cr.parent_id = ev_cpr.comment_id and ev_cpr.user_id = '${req.user.id}',true,null)) from ev_article_comment_praise_record ev_cpr) as is_praise from ev_article_comment_record ev_cr join ev_article_comment ev_c on ev_cr.parent_id = ev_c.comment_id inner join ev_users ev_u on ev_c.user_id = ev_u.id where ev_cr.art_id=? and ev_c.is_delete='0' and ev_cr.child_id is null order by ${order} limit ?, ?`
     db.query(sqlStr, [
         req.query.art_id,
         (parseInt(req.query.offset) - 1)  * req.query.limit,

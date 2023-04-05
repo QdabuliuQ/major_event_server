@@ -4,7 +4,7 @@ const {
 } = require('../../config')
 
 exports.getPraiseList = (req, res) => {
-    const sqlStr = `select ev_a.* from ev_article_praise_record ev_apr join ev_articles ev_a on ev_a.id = ev_apr.art_id where ev_apr.user_id=? and ev_a.is_delete = '0' and ev_a.state = '1' order by ev_apr.time desc limit ?,15`
+    const sqlStr = `select ev_a.*, ev_apr.time p_time from ev_article_praise_record ev_apr join ev_articles ev_a on ev_a.id = ev_apr.art_id where ev_apr.user_id=? and ev_a.is_delete = '0' and ev_a.state = '1' order by ev_apr.time desc limit ?,15`
     db.query(sqlStr, [
         req.user.id,
         (parseInt(req.params.offset)-1)*15
@@ -31,7 +31,7 @@ exports.getPraiseList = (req, res) => {
 }
 
 exports.getBrowseList = (req, res) => {
-    const sqlStr = `select ev_a.* from ev_article_browse_record ev_abr join ev_articles ev_a on ev_a.id = ev_abr.art_id where ev_abr.user_id=? and ev_a.is_delete = '0' and ev_a.state = '1' order by ev_abr.time desc limit ?,15`
+    const sqlStr = `select ev_a.*, ev_abr.time b_time from ev_article_browse_record ev_abr join ev_articles ev_a on ev_a.id = ev_abr.art_id where ev_abr.user_id=? and ev_a.is_delete = '0' and ev_a.state = '1' order by ev_abr.time desc limit ?,15`
     db.query(sqlStr, [
         req.user.id,
         (parseInt(req.params.offset)-1)*15
