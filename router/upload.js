@@ -9,6 +9,7 @@ const {
     reportProof,
     videoCover,
     video,
+	eventImage
 } = require('../router_handler/upload')
 
 // 配置存储信息
@@ -160,6 +161,7 @@ router.post('/articleSource', articleSource.single('source'), (req, res) => {
 })
 
 let upload = multer({ dest: 'uploads/' })
+
 // 上传举报材料
 router.post('/reportProof', upload.array('proof', 4), reportProof)
 
@@ -168,5 +170,8 @@ router.post('/videoCover', upload.single('videoCover'), videoCover)
 
 // 上传视频
 router.post('/video', upload.single('video'), video)
+
+// 上传动态图片
+router.post('/eventImage', upload.array('event', 9), eventImage)
 
 module.exports = router

@@ -1,6 +1,7 @@
 // 项目入口文件
 // 导入express包
 const express = require('express')
+const path = require('path');
 // 表单验证规则
 const joi = require('joi')  
 // 解析token
@@ -9,7 +10,6 @@ const expressJWT = require('express-jwt')
 // const cookieParser = require('cookie-parser');
 const config = require('./config')
 const db = require('./db/index')
-
 
 
 // 创建服务器实例对象
@@ -37,8 +37,9 @@ const cors = require('cors')
 app.use(cors())
 
 // 托管静态资源
-app.use(express.static('./public'))
-app.use(express.static('./uploads'))
+// app.use(express.static('./public'))
+app.use(express.static(path.join(__dirname,'public')))
+app.use(express.static(path.join(__dirname,'uploads')))
 
 // 解析表单数据中间件
 app.use(express.urlencoded({extended: false}))
@@ -168,9 +169,16 @@ app.use('/client/com', require('./router/client/comment'))
 app.use('/client/sea', require('./router/client/search'))
 // 聊天模块
 app.use('/client/chat', require('./router/client/chat'))
+// 动态模块
+app.use('/client/eve', require('./router/client/event'))
 
 // 上传文件模块
 app.use('/upload', require('./router/upload'))
+
+app.use((req, res, next) => {
+	console.log(req)
+	next()
+})
 
 // 错误捕获中间件
 app.use((err, req, res, next) => {
@@ -179,10 +187,11 @@ app.use((err, req, res, next) => {
   // 如果包含了name属性为 UnauthorizedError，则表示token错误
   if(err.name == 'UnauthorizedError') return res.cc('登录失效，请查询登录', -1)
   // 未知错误
-  res.cc(err)
+  res.send(err)
 })
 
 // 启动服务器
 app.listen(8080, () => {
+  console.log(process.platform)
   console.log('success')
 })

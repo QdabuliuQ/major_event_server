@@ -83,3 +83,25 @@ exports.video = (req, res) => {
         res.cc('视频上传失败')
     })
 }
+
+exports.eventImage = (req, res) => {
+	let files = req.files
+	Promise.all(
+	    files.map( async file => await saveImg(file, 'eventImage'))
+	).then(list => {
+	    // list保存了所有文件地址返回的相对地址
+	    let url = []
+	    for(let item of list) {
+	        url.push({
+	            link: item
+	        })
+	    }
+	    res.send({
+	        status: 0,
+	        url,
+	        msg: "图片上传成功"
+	    })
+	}).catch((err)=>{
+	    res.cc('图片上传失败')
+	});
+}
