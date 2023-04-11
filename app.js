@@ -10,6 +10,9 @@ const expressJWT = require('express-jwt')
 // const cookieParser = require('cookie-parser');
 const config = require('./config')
 const db = require('./db/index')
+const {
+	port
+} = require('./config')
 
 
 // 创建服务器实例对象
@@ -175,10 +178,6 @@ app.use('/client/eve', require('./router/client/event'))
 // 上传文件模块
 app.use('/upload', require('./router/upload'))
 
-app.use((req, res, next) => {
-	console.log(req)
-	next()
-})
 
 // 错误捕获中间件
 app.use((err, req, res, next) => {
@@ -191,7 +190,7 @@ app.use((err, req, res, next) => {
 })
 
 // 启动服务器
-app.listen(8080, () => {
+app.listen(port, () => {
   console.log(process.platform)
   console.log('success')
 })

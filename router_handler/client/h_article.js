@@ -391,14 +391,14 @@ exports.getArticleById = (req, res) => {
 }
 
 exports.deleteArticleById = (req, res) => {
-    const sqlStr = 'select * from ev_articles where id = ? and author_id=? and state = "1" and is_delete = "0"'
+    const sqlStr = 'select * from ev_articles where id = ? and author_id=? and state = "1"'
     db.query(sqlStr, [
         req.body.id,
         req.user.id
     ], (err, results) => {
         if(err) return res.cc(err)
         if(results.length != 1) return res.cc('操作失败')
-        const sqlStr = 'update ev_articles set is_delete="1" where id=?'
+        const sqlStr = 'update ev_articles set state="3" where id=?'
         db.query(sqlStr, req.body.id, (err, results) => {
             if(err) return res.cc(err)
             if(results.affectedRows != 1) return res.cc('操作失败')
