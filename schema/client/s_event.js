@@ -27,3 +27,10 @@ exports.praise_event_schema = {
 		is_praise: joi.string().required().valid('0','1')
 	}
 }
+
+exports.report_event_schema = {
+	body: {
+		ev_id: id,
+		reason: joi.string().required().max(20)
+	}
+}

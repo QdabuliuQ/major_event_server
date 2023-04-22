@@ -4,7 +4,8 @@ const {
 	pub_event_schema,
 	add_event_comment_schema,
 	praise_comment_schema,
-	praise_event_schema
+	praise_event_schema,
+	report_event_schema
 } = require('../../schema/client/s_event')
 const {
 	pubEvent,
@@ -13,7 +14,11 @@ const {
 	getEventComment,
 	praiseComment,
 	praiseEvent,
-	getEventPraiseList
+	getEventPraiseList,
+	deleteEvent,
+	getEventReplyList,
+	getEventData,
+	reportEvent
 } = require('../../router_handler/client/h_event')
 const router = express.Router()
 
@@ -36,5 +41,17 @@ router.post('/praiseEvent', expressJoi(praise_event_schema), praiseEvent)
 
 // 动态点赞列表
 router.get('/getEventPraiseList', getEventPraiseList)
+
+// 删除动态
+router.post('/deleteEvent', deleteEvent)
+
+// 获取动态转发
+router.get('/getEventReplyList', getEventReplyList)
+
+// 获取动态数据
+router.get('/getEventData', getEventData)
+
+// 举报动态
+router.post('/reportEvent', expressJoi(report_event_schema), reportEvent)
 
 module.exports = router

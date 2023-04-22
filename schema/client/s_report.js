@@ -18,7 +18,7 @@ exports.add_comment_report_schema = {
     body: {
         reason: joi.string().required().max(20),
         comment_id: id,
-        type: joi.string().valid('1','2').required()
+        type: joi.string().valid('1','2','3').required()
     }
 }
 

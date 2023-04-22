@@ -51,15 +51,15 @@ exports.getEventListById = (req, res) => {
 	const sqlStr = `select ev_e.*, ev_u.nickname, ev_u.user_pic, (
 		case ev_e.type 
 			when '2' then if(ev_a.state = '1', GROUP_CONCAT(JSON_OBJECT('id',ev_a.id, 'title',ev_a.title, 'cover_img', ev_a.cover_img, 'content', ev_a.content)), -1) 
-			when '3' then if(ev_v.state = '2', GROUP_CONCAT(JSON_OBJECT('id',ev_v.id, 'title',ev_v.title, 'cover_img', ev_v.cover_img, 'duration', ev_v.duration, 'time', ev_v.time)), -1)  
-			when '4' then if(ev_e.state = '1', GROUP_CONCAT(JSON_OBJECT('ev_id',ev_e_2.ev_id, 'user_id',ev_e_2.user_id, 'user_pic', ev_u_2.user_pic, 'nickname', ev_u_2.nickname, 'content', ev_e_2.content, 'type', ev_e_2.type, 'resource_id', ev_e_2.resource_id, 'images', ev_e_2.images, 'time', ev_e_2.time, 'resource_info', (
+			when '3' then if(ev_v.state = '1', GROUP_CONCAT(JSON_OBJECT('id',ev_v.id, 'title',ev_v.title, 'cover_img', ev_v.cover_img, 'duration', ev_v.duration, 'time', ev_v.time)), -1)  
+			when '4' then if(ev_e.state = '1' and ev_e_2.state = '1', GROUP_CONCAT(JSON_OBJECT('ev_id',ev_e_2.ev_id, 'user_id',ev_e_2.user_id, 'user_pic', ev_u_2.user_pic, 'nickname', ev_u_2.nickname, 'content', ev_e_2.content, 'type', ev_e_2.type, 'resource_id', ev_e_2.resource_id, 'images', ev_e_2.images, 'time', ev_e_2.time, 'resource_info', (
 				case ev_e_2.type
 					when '2' then if(ev_e_2.state = '1', (select getEventArticleInfo(ev_e_2.resource_id)), -1) 
 					when '3' then if(ev_e_2.state = '1', (select getEventVideoInfo(ev_e_2.resource_id)), -1) 
 					else null end
 				))), -1)
 			else null end
- 	) as resource_info, (select count(*) from ev_event_comment where ev_id=ev_e.ev_id) as commentCount, (select count(*) from ev_event_praise_record where ev_id=ev_e.ev_id) as praiseCount, (select count(*) from ev_event_praise_record where ev_id=ev_e.ev_id and user_id='${req.user.id}') as isPraise from ev_events ev_e join ev_users ev_u on ev_e.user_id = ev_u.id left join ev_articles ev_a on ev_e.type = '2' and ev_e.resource_id = ev_a.id left join ev_videos ev_v on ev_e.type = '3' and ev_e.resource_id = ev_v.id left join ev_events ev_e_2 on ev_e.type = '4' and ev_e.resource_id = ev_e_2.ev_id left join ev_users ev_u_2 on ev_e_2.user_id = ev_u_2.id where ev_e.user_id=? and ev_e.state='1' group by ev_e.ev_id order by ev_e.time desc limit ?,?`
+ 	) as resource_info, (select count(*) from ev_event_comment where ev_id=ev_e.ev_id) as commentCount, (select count(*) from ev_event_praise_record where ev_id=ev_e.ev_id) as praiseCount, (select count(*) from ev_event_praise_record where ev_id=ev_e.ev_id and user_id='${req.user.id}') as isPraise, (select count(*) from ev_events where type='4' and resource_id=ev_e.ev_id) as shareCount from ev_events ev_e join ev_users ev_u on ev_e.user_id = ev_u.id left join ev_articles ev_a on ev_e.type = '2' and ev_e.resource_id = ev_a.id left join ev_videos ev_v on ev_e.type = '3' and ev_e.resource_id = ev_v.id left join ev_events ev_e_2 on ev_e.type = '4' and ev_e.resource_id = ev_e_2.ev_id left join ev_users ev_u_2 on ev_e_2.user_id = ev_u_2.id where ev_e.user_id=? and ev_e.state='1' group by ev_e.ev_id order by ev_e.time desc limit ?,?`
 	db.query(sqlStr, [
 		req.query.id,
 		(parseInt(req.query.offset)-1) * ps,
@@ -134,7 +134,7 @@ exports.getEventComment = (req, res) => {
 		const sqlStr = 'select count(*) as count from ev_event_comment where ev_id=?'
 		db.query(sqlStr, req.query.ev_id, (err, results) => {
 			let count = results[0].count
-			res.send({
+			res.send({ 
 				status: 0,
 				msg: '获取成功',
 				data,
@@ -208,4 +208,84 @@ exports.getEventPraiseList = (req, res) => {
 			})
 		})
 	})
+}
+
+// 删除动态
+exports.deleteEvent = (req, res) => {
+	const sqlStr = 'select * from ev_events where ev_id=? and state="1" and user_id=?'
+	db.query(sqlStr, [
+		req.body.ev_id,
+		req.user.id
+	], (err, results) => {
+		if(err) return res.cc(err)
+		console.log(req.body.ev_id)
+		if(results.length != 1) return res.cc('删除失败')
+		const sqlStr = 'update ev_events set state="3" where ev_id=?'
+		db.query(sqlStr, req.body.ev_id, (err, results) => {
+			if(err) return res.cc(err)
+			if(results.affectedRows != 1) return res.cc('删除失败')
+			res.cc('删除成功', 0)
+		})
+	})
+}
+
+// 获取动态转发
+exports.getEventReplyList = (req, res) => {
+	const ps = 30, offset = parseInt(req.query.offset)
+	const sqlStr = 'select ev_u.id, ev_u.nickname, ev_u.user_pic, ev_e.time from ev_events ev_e join ev_users ev_u on ev_e.user_id = ev_u.id where ev_e.resource_id=? and ev_e.state = "1" order by ev_e.time desc limit ?,?'
+	db.query(sqlStr, [
+		req.query.ev_id,
+		(offset-1)*ps,
+		ps
+	], (err, results) => {
+		if(err) return res.cc(err)
+		for(let item of results) {
+			item.user_pic = oss + item.user_pic
+		}
+		let data = results
+		const sqlStr = 'select count(*) as count from ev_events where resource_id=? and state = "1"'
+		db.query(sqlStr, req.query.ev_id, (err, results) => {
+			let count = results[0].count
+			res.send({
+				status: 0,
+				data,
+				msg: '获取成功',
+				count,
+				more: offset*ps < count
+			})
+		})
+	})
+}
+
+// 获取动态数据
+exports.getEventData = (req, res) => {
+	let ev_id = req.query.ev_id
+	const sqlStr = `select (select count(*) from ev_event_comment where ev_id='${ev_id}') as commentCount, (select count(*) from ev_event_praise_record where ev_id='${ev_id}') as praiseCount, (select count(*) from ev_event_praise_record where ev_id='${ev_id}' and user_id='${req.user.id}') as isPraise, (select count(*) from ev_events where type='4' and resource_id='${ev_id}') as shareCount from ev_events` 
+	db.query(sqlStr, (err, results) => {
+		if(err) return res.cc(err)
+		res.send({
+			status: 0,
+			msg: '获取成功',
+			data: results[0]
+		})
+	})
+}
+
+// 举报动态
+exports.reportEvent = (req, res) => {
+	const sqlStr = 'select * from ev_events where ev_id=? and state = "1"'
+	db.query(sqlStr, req.body.ev_id, (err, results) => {
+		if(err) return res.cc(err)
+		if(results.length != 1) return res.cc('举报失败')
+		const sqlStr = 'insert ev_event_report set ?'
+		db.query(sqlStr, {
+			ev_id: req.body.ev_id,
+			user_id: req.user.id,
+			reason: req.body.reason,
+		}, (err, results) => {
+			if(err) return res.cc('举报审核中', 0)
+			res.cc('举报成功', 0)
+		})
+	})
+	
 }

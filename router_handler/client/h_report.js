@@ -32,20 +32,22 @@ exports.addReport = (req, res) => {
 // 举报评论
 exports.addCommentReport = (req, res) => {
     // 判断是否存在该评论
-    const sqlStr = req.body.type == '1' ? 'select * from ev_article_comment where comment_id=? and is_delete="0"' : 'select * from ev_video_comment where comment_id=? and is_delete="0"'
+    const sqlStr = req.body.type == '1' ? 
+	'select * from ev_article_comment where comment_id=? and is_delete="0"' : 
+	req.body.type == '2' ? 'select * from ev_video_comment where comment_id=? and is_delete="0"' :
+	'select * from ev_event_comment where comment_id = ? and is_delete="0"' 
     db.query(sqlStr, req.body.comment_id, (err, results) => {
         if(err) return res.cc(err)
         if(results.length != 1) return res.cc('举报失败')
         const sqlStr = 'insert into ev_comment_report set ?'
         db.query(sqlStr, {
-            id: 'r_c'+ uuid(16),
             user_id: req.user.id,
             comment_id: req.body.comment_id,
             reason: req.body.reason,
             time: Date.now(),
             type: req.body.type
         }, (err, results) => {
-            if(err) return res.cc(err)
+            if(err) return res.cc('举报审核中', 0)
             if(results.affectedRows != 1) return res.cc('举报失败')
             res.cc('提交成功', 0)
         })
