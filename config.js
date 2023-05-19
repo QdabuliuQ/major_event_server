@@ -1,6 +1,6 @@
 // 全局配置文件
-let oss = process.platform == 'win32' ? 'http://127.0.0.1:8080' : 'http://47.115.212.1:5050'
-let port = process.platform == 'win32' ? 8080 : 5050
+let oss = process.platform == 'win32' ? 'http://127.0.0.1:8000' : 'http://47.115.212.1:5050'
+let port = process.platform == 'win32' ? 8000 : 5050
 module.exports = {
   // 加密/解密token密钥
   jwtSecretKey: 'qdabuliuq',

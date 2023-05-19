@@ -235,7 +235,7 @@ exports.getVideoById = (req, res) => {
 }
 
 exports.getVideoDetail = (req, res) => {
-    const sqlStr = `select ev_v.*, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id) as praise_count, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_praise, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id) as collect_count, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_collect, (select count(*) from ev_video_comment ev_vc where ev_vc.video_id = ev_v.id) as comment_count from ev_videos ev_v join ev_users ev_u on ev_v.user_id=ev_u.id where state = '2' and ev_v.id=?`
+    const sqlStr = `select ev_v.*, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id) as praise_count, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_praise, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id) as collect_count, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_collect, (select count(*) from ev_video_comment ev_vc where ev_vc.video_id = ev_v.id) as comment_count from ev_videos ev_v join ev_users ev_u on ev_v.user_id=ev_u.id where ev_v.state = '2' and ev_v.id=?`
 
     db.query(sqlStr, req.query.id, (err, results) => {
         console.log(results)

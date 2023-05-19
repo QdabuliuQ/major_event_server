@@ -191,6 +191,5 @@ app.use((err, req, res, next) => {
 
 // 启动服务器
 app.listen(port, () => {
-  console.log(process.platform)
   console.log('success')
 })

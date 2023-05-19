@@ -51,7 +51,7 @@ exports.getEventListById = (req, res) => {
 	const sqlStr = `select ev_e.*, ev_u.nickname, ev_u.user_pic, (
 		case ev_e.type 
 			when '2' then if(ev_a.state = '1', GROUP_CONCAT(JSON_OBJECT('id',ev_a.id, 'title',ev_a.title, 'cover_img', ev_a.cover_img, 'content', ev_a.content)), -1) 
-			when '3' then if(ev_v.state = '1', GROUP_CONCAT(JSON_OBJECT('id',ev_v.id, 'title',ev_v.title, 'cover_img', ev_v.cover_img, 'duration', ev_v.duration, 'time', ev_v.time)), -1)  
+			when '3' then if(ev_v.state = '2', GROUP_CONCAT(JSON_OBJECT('id',ev_v.id, 'title',ev_v.title, 'cover_img', ev_v.cover_img, 'duration', ev_v.duration, 'time', ev_v.time)), -1)  
 			when '4' then if(ev_e.state = '1' and ev_e_2.state = '1', GROUP_CONCAT(JSON_OBJECT('ev_id',ev_e_2.ev_id, 'user_id',ev_e_2.user_id, 'user_pic', ev_u_2.user_pic, 'nickname', ev_u_2.nickname, 'content', ev_e_2.content, 'type', ev_e_2.type, 'resource_id', ev_e_2.resource_id, 'images', ev_e_2.images, 'time', ev_e_2.time, 'resource_info', (
 				case ev_e_2.type
 					when '2' then if(ev_e_2.state = '1', (select getEventArticleInfo(ev_e_2.resource_id)), -1) 
