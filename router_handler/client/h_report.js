@@ -39,18 +39,28 @@ exports.addCommentReport = (req, res) => {
     db.query(sqlStr, req.body.comment_id, (err, results) => {
         if(err) return res.cc(err)
         if(results.length != 1) return res.cc('举报失败')
-        const sqlStr = 'insert into ev_comment_report set ?'
-        db.query(sqlStr, {
-            user_id: req.user.id,
-            comment_id: req.body.comment_id,
-            reason: req.body.reason,
-            time: Date.now(),
-            type: req.body.type
-        }, (err, results) => {
-            if(err) return res.cc('举报审核中', 0)
-            if(results.affectedRows != 1) return res.cc('举报失败')
-            res.cc('提交成功', 0)
-        })
+		const sqlStr = 'select * from ev_comment_report where comment_id=? and user_id=? and reason=? and type=? and state="1"'
+        db.query(sqlStr, [
+			req.body.comment_id,
+			req.user.id,
+			req.body.reason,
+			req.body.type
+		], (err, results) => {
+			if(results.length) return res.cc('举报审核中', 0)
+			const sqlStr = 'insert into ev_comment_report set ?'
+			db.query(sqlStr, {
+				record_id: 're_' + uuid(20, 36),
+			    user_id: req.user.id,
+			    comment_id: req.body.comment_id,
+			    reason: req.body.reason,
+			    time: Date.now(),
+			    type: req.body.type
+			}, (err, results) => {
+			    if(results.affectedRows != 1) return res.cc('举报失败')
+			    res.cc('提交成功', 0)
+			})
+		})
+		
     })
 }
 

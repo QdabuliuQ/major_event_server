@@ -46,7 +46,6 @@ exports.getArticleCate = (req, res) => {
 
 // 发布文章
 exports.addArticle = (req, res) => {
-    console.log(req.user)
     if(req.userData.status == '3') {
         return res.cc('账号禁言中')
     }
@@ -226,12 +225,13 @@ exports.pubArticleComment = (req, res) => {
     const sqlStr = 'insert into ev_article_comment_record set ?'
     let p_id = req.body.parent_id ? req.body.parent_id : uuid(24)
     let c_id = req.body.parent_id ? uuid(24) : null
+	let time = Date.now()
     db.query(sqlStr, {
         id: uuid(20),
         parent_id: p_id,
         child_id: c_id,
         art_id: req.body.art_id,
-        time: Date.now()
+        time,
     }, (err, results) => {
         if(results.affectedRows != 1) return res.cc('发表评论失败')
         const sqlStr = 'insert into ev_article_comment set ?'
@@ -239,6 +239,7 @@ exports.pubArticleComment = (req, res) => {
             comment_id: c_id ? c_id : p_id,
             user_id: req.user.id,
             content,
+			time,
             // nickname: req.user.nickname,
             // user_pic: req.userData.user_pic
         }, (err, results) => {

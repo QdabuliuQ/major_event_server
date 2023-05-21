@@ -118,7 +118,7 @@ exports.deleteReportReason = (req, res) => {
 
 // 获取评论举报列表
 exports.getCommentReportList = (req, res) => {
-    let {typeSql,reasonSql,stateSql,timeSql,valSql } = createConditionSql([
+    let { typeSql,reasonSql,stateSql,timeSql,valSql } = createConditionSql([
         {
             prefix: 'ev_cr',
             name: 'type',
@@ -143,11 +143,11 @@ exports.getCommentReportList = (req, res) => {
         }, {
             name: 'val',
             type: 'like',
-            fields: ['ev_cr.id','ev_cr.user_id','ev_cr.comment_id','ev_u.id', 'ev_u.nickname', 'ev_ac.content']
+            fields: ['ev_cr.user_id','ev_cr.comment_id','ev_u.id', 'ev_u.nickname', 'ev_ac.content']
         }
     ], req.query)
 
-    const sqlStr = `select ev_cr.*, if(ev_cr.type = '1', ev_ac.content, ev_vc.content) as content, ev_u.user_pic re_user_pic, ev_u.nickname re_nickname from ev_comment_report ev_cr join ev_users ev_u on ev_cr.user_id = ev_u.id LEFT JOIN ev_article_comment ev_ac ON ev_cr.comment_id = ev_ac.comment_id AND ev_cr.type = "1" LEFT JOIN ev_video_comment ev_vc ON ev_cr.comment_id = ev_vc.comment_id AND ev_cr.type = "2" where ${reasonSql} and ${stateSql} and ${timeSql} and ${valSql} and ${typeSql} order by ev_cr.time desc limit ?,?`
+    const sqlStr = `select ev_cr.*, if(ev_cr.type = '1', ev_ac.content, if(ev_cr.type = '2', ev_vc.content, ev_ec.content)) as content, ev_u.user_pic re_user_pic, ev_u.nickname re_nickname from ev_comment_report ev_cr join ev_users ev_u on ev_cr.user_id = ev_u.id LEFT JOIN ev_article_comment ev_ac ON ev_cr.comment_id = ev_ac.comment_id AND ev_cr.type = "1" LEFT JOIN ev_video_comment ev_vc ON ev_cr.comment_id = ev_vc.comment_id AND ev_cr.type = "2" LEFT JOIN ev_event_comment ev_ec on ev_cr.comment_id = ev_ec.comment_id AND ev_cr.type = "3" where ${reasonSql} and ${stateSql} and ${timeSql} and ${valSql} and ${typeSql} order by ev_cr.time desc limit ?,?`
     db.query(sqlStr, [
         (parseInt(req.query.offset)-1)*pageSize,
         pageSize
@@ -175,16 +175,42 @@ exports.getCommentReportList = (req, res) => {
 
 // 更新评论举报状态
 exports.updateCommentReportState = (req, res) => {
-    const sqlStr = 'select * from ev_comment_report where id=? and state="1"'
-    db.query(sqlStr, req.body.id, (err, results) => {
+    const sqlStr = 'select * from ev_comment_report where record_id=? and user_id=? and comment_id=? and state="1"'
+    db.query(sqlStr, [
+		req.body.record_id,
+		req.body.user_id,
+		req.body.comment_id,
+	], (err, results) => {
         if(err) return res.cc(err)
         if(results.length != 1) return res.cc('操作失败')
 
-        const sqlStr = 'update ev_comment_report set state=? where id=?'
-        db.query(sqlStr, [req.body.state, req.body.id], (err, results) => {
+        const sqlStr = 'update ev_comment_report set state=? where record_id=? and user_id=? and comment_id=? and type=?'
+        db.query(sqlStr, [
+			req.body.state, 
+			req.body.record_id,
+			req.body.user_id,
+			req.body.comment_id,
+			req.body.type,
+		], (err, results) => {
             if(err) return res.cc(err)
             if(results.affectedRows != 1) res.cc('操作失败，请重试')
-            res.cc('操作成功', 0)
+			res.cc('操作成功', 0)
+			if(req.body.state == '2') {
+				let updateSql = ''
+				switch(req.body.type) {
+					case '1':
+						updateSql = `update ev_article_comment set is_delete='1' where comment_id='${req.body.comment_id}'`
+						break
+					case '2':
+						updateSql = `update ev_video_comment set is_delete='1' where comment_id='${req.body.comment_id}'`
+						break
+					case '3':
+						updateSql = `update ev_event_comment set is_delete='1' where comment_id='${req.body.comment_id}'`
+						break
+				}
+				db.query(updateSql)
+			}
+            
         })
     })
 }

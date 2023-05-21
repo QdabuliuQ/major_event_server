@@ -6,25 +6,24 @@ const {createConditionSql} = require("../../tools");
 
 // 获取评论列表
 exports.getCommentList = (req, res) => {
-
     let is_deleteSql = ''
     if(req.query.is_delete) {
-        is_deleteSql = `(ev_c.is_delete = ${req.query.is_delete})`
+        is_deleteSql = `(ev_ac.is_delete = ${req.query.is_delete})`
     } else {
-        is_deleteSql = `(ev_c.is_delete <> -1)`
+        is_deleteSql = `(ev_ac.is_delete <> -1)`
     }
 
     let timeSql = ''
     if(req.query.startTime && req.query.endTime) {
-        timeSql = `(ev_cr.time between ${req.query.startTime} and ${req.query.endTime})`
+        timeSql = `(ev_ac.time between ${req.query.startTime} and ${req.query.endTime})`
     } else {
-        timeSql = `(ev_cr.time between 0 and ${Date.now()})`
+        timeSql = `(ev_ac.time between 0 and ${Date.now()})`
     }
 
     let val = req.query.val ? req.query.val : ''
-    let valSql = `(ev_c.comment_id like '%${val}%' or ev_c.content like '%${val}%' or ev_u.nickname like '%${val}%' or ev_u.id like '%${val}%' or ev_cr.art_id like '%${val}%')`
-
-    const sqlStr = `select *, (select count(*) - 1 from ev_article_comment_record ev_cr where ev_cr.parent_id = ev_c.comment_id) as reply, (select count(IF(ev_cr.parent_id = ev_cpr.comment_id,true,null)) from ev_article_comment_praise_record ev_cpr) as praise from ev_article_comment_record ev_cr join ev_article_comment ev_c on ev_cr.parent_id = ev_c.comment_id inner join ev_users ev_u on ev_c.user_id=ev_u.id where ev_cr.child_id is null and ${is_deleteSql} and ${timeSql} and ${valSql} order by ev_cr.time desc limit ?,?`
+    let valSql = `(ev_ac.comment_id like '%${val}%' or ev_ac.content like '%${val}%' or ev_u.nickname like '%${val}%' or ev_u.id like '%${val}%')`
+	console.log(is_deleteSql, timeSql, valSql)
+    const sqlStr = `select ev_u.nickname, ev_u.user_pic, ev_ac.*, (select count(*) from ev_article_comment_praise_record ev_acp where ev_acp.comment_id = ev_ac.comment_id) as praise, (select count(*) - 1 from ev_article_comment_record ev_cr where ev_cr.parent_id = ev_ac.comment_id) as reply from ev_article_comment as ev_ac inner join ev_users ev_u on ev_ac.user_id=ev_u.id where ${is_deleteSql} and ${timeSql} and ${valSql} order by ev_ac.time desc limit ?,?`
     db.query(sqlStr, [
         (parseInt(req.query.offset)-1)*pageSize,
         pageSize
@@ -34,7 +33,7 @@ exports.getCommentList = (req, res) => {
             item.user_pic = oss + item.user_pic
         }
         let data = results
-        const sqlStr = `select count(*) as count from ev_article_comment_record ev_cr join ev_article_comment ev_c on ev_cr.parent_id = ev_c.comment_id where ev_cr.child_id is null`
+        const sqlStr = `select count(*) as count from ev_article_comment ev_ac inner join ev_users ev_u on ev_ac.user_id=ev_u.id where ${is_deleteSql} and ${timeSql} and ${valSql}`
         db.query(sqlStr, (err, results) => {
             if(err) return res.cc(err)
             res.send({

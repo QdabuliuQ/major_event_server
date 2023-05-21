@@ -112,7 +112,7 @@ exports.getUserRegion = (req, res) => {
 }
 
 exports.getRegisterData = (req, res) => {
-    const sqlStr = 'SELECT from_unixtime( time / 1000, "%Y-%m-%d" ) AS days, count(*) as count FROM ev_users GROUP BY days order by time desc'
+    const sqlStr = 'SELECT from_unixtime( ANY_VALUE(time) / 1000, "%Y-%m-%d" ) AS days, count(*) as count FROM ev_users GROUP BY days order by ANY_VALUE(time) desc'
     db.query(sqlStr, (err, results) => {
         if(err) return res.cc(err)
         res.send({

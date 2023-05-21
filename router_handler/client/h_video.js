@@ -26,7 +26,7 @@ exports.pubVideo = (req, res) => {
 }
 
 exports.getVideoList = (req, res) => {
-    const sqlStr = `select ev_v.*, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id) as praise_count, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_praise, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id) as collect_count, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_collect, (select count(*) from ev_video_comment ev_vc where ev_vc.video_id = ev_v.id) as comment_count from ev_videos ev_v join ev_users ev_u on ev_v.user_id=ev_u.id where state = '2' order by ev_v.time desc limit ?,?`
+    const sqlStr = `select ev_v.*, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id) as praise_count, (select count(*) from ev_video_praise_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_praise, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id) as collect_count, (select count(*) from ev_video_collect_record ev_vpr where ev_vpr.video_id = ev_v.id and ev_vpr.user_id = '${req.user.id}') as is_collect, (select count(*) from ev_video_comment ev_vc where ev_vc.video_id = ev_v.id and ev_vc.is_delete='0') as comment_count from ev_videos ev_v join ev_users ev_u on ev_v.user_id=ev_u.id where state = '2' order by ev_v.time desc limit ?,?`
     db.query(sqlStr, [
         (parseInt(req.query.offset)-1)*pageSize,
         pageSize
@@ -150,7 +150,8 @@ exports.getVideoComment = (req, res) => {
             delete item.is_delete
         }
         let data = results
-        const sqlStr = `select count(*) as count from ev_video_comment  where video_id = ? ${req.type === 'client' ? 'and is_delete = "0"' : ''}`
+        const sqlStr = `select count(*) as count from ev_video_comment  where video_id = ? ${req.u_type === 'client' ? 'and is_delete = "0"' : ''}`
+		console.log(sqlStr)
         db.query(sqlStr, req.query.video_id, (err, results) => {
             if(err) return res.cc(err)
             res.send({
