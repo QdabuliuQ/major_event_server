@@ -147,6 +147,8 @@ app.use('/admin/com', require('./router/admin/comment'))
 app.use('/admin/vid', require('./router/admin/video'))
 // 首页模块
 app.use('/admin/ind', require('./router/admin/index'))
+// 动态模块
+app.use('/admin/eve', require('./router/admin/event'))
 
 // 验证码
 app.use('/code', require('./router/code'))

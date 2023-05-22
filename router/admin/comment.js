@@ -5,7 +5,9 @@ const {
     deleteComment,
     getCommentFloor,
     getVideoCommentList,
-    deleteVideoComment
+    deleteVideoComment,
+	getEventCommentList,
+	deleteEventComment
 } = require('../../router_handler/admin/comment')
 const {
     getArticleDetail,
@@ -28,5 +30,11 @@ router.get('/getVideoCommentList', getVideoCommentList)
 
 // 删除评论
 router.post('/deleteVideoComment', deleteVideoComment)
+
+// 获取动态评论
+router.get('/getEventCommentList', getEventCommentList)
+
+// 删除动态评论
+router.post('/deleteEventComment', deleteEventComment)
 
 module.exports = router

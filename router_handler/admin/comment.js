@@ -118,7 +118,6 @@ exports.getVideoCommentList = (req, res) => {
 
     let ps = req.query.pageSize ? parseInt(req.query.pageSize) : pageSize
     const sqlStr = `select ev_vc.*, ev_v.video_url, ev_u.nickname, ev_u.user_pic, (select count(*) from ev_video_comment_praise_record ev_vcpr where ev_vcpr.comment_id=ev_vc.comment_id) as praise_count from ev_video_comment ev_vc join ev_users ev_u on ev_vc.user_id = ev_u.id inner join ev_videos ev_v on ev_vc.video_id = ev_v.id where ${is_deleteSql} and ${timeSql} and ${valSql} order by ev_vc.time desc limit ?,?`
-    console.log(sqlStr)
     db.query(sqlStr, [
         (parseInt(req.query.offset)-1)*ps,
         ps
@@ -143,6 +142,7 @@ exports.getVideoCommentList = (req, res) => {
     })
 }
 
+// 删除视频评论
 exports.deleteVideoComment = (req, res) => {
     const sqlStr = 'select * from ev_video_comment where comment_id=?'
     db.query(sqlStr, req.body.comment_id, (err, results) => {
@@ -160,4 +160,69 @@ exports.deleteVideoComment = (req, res) => {
             res.cc('删除评论成功', 0)
         })
     })
+}
+
+// 获取动态评论列表
+exports.getEventCommentList = (req, res) => {
+	let {is_deleteSql, timeSql, valSql} = createConditionSql([
+	    {
+	        prefix: 'ev_ec',
+	        name: 'is_delete',
+	        type: 'eval',
+	        t: 'string',
+	    },{
+	        prefix: 'ev_ec',
+	        name: 'time',
+	        name_dic1: 'startTime',
+	        name_dic2: 'endTime',
+	        type: 'range',
+	    },{
+	        name: 'val',
+	        type: 'like',
+	        fields: ['ev_ec.comment_id','ev_ec.user_id','ev_ec.ev_id','ev_ec.content', 'ev_u.nickname']
+	    }
+	], req.query)
+	let ps = req.query.pageSize ? parseInt(req.query.pageSize) : pageSize
+	const sqlStr = `select ev_u.nickname, ev_u.user_pic, ev_ec.*, (select count(*) from ev_event_comment_praise_record ev_ecp where ev_ecp.comment_id=ev_ec.comment_id) as praise_count from ev_event_comment ev_ec inner join ev_users ev_u on ev_ec.user_id=ev_u.id where ${is_deleteSql} and ${timeSql} and ${valSql} order by ev_ec.time desc limit ?,?`
+	db.query(sqlStr, [
+		(parseInt(req.query.offset)-1)*ps,
+		ps
+	], (err, results) => {
+		if(err) return res.cc(err)
+		for(let item of results) {
+		    item.user_pic = oss + item.user_pic
+		}
+		let data = results
+		const sqlStr = `select count(*) as count from ev_event_comment ev_ec inner join ev_users ev_u on ev_ec.user_id=ev_u.id`
+		db.query(sqlStr, (err, results) => {
+		    if(err) return res.cc(err)
+		    res.send({
+		        status: 0,
+		        data,
+		        msg: '获取动态评论列表成功',
+		        count: results[0].count,
+		        pageSize: ps
+		    })
+		})
+	})
+}
+
+// 删除动态评论
+exports.deleteEventComment = (req, res) => {
+	const sqlStr = 'select * from ev_event_comment where comment_id=?'
+	db.query(sqlStr, req.body.comment_id, (err, results) => {
+	    if(err) return res.cc(err)
+	    if(results.length != 1) return res.cc('评论内容不存在')
+	    if(results[0].is_delete == '1') return res.cc('评论已删除')
+	
+	    const sqlStr = 'update ev_event_comment set is_delete=? where comment_id=?'
+	    db.query(sqlStr, [
+	        '1',
+	        req.body.comment_id
+	    ], (err, results) => {
+	        if(err) return res.cc(err)
+	        if(results.affectedRows != 1) return res.cc('删除评论失败')
+	        res.cc('删除评论成功', 0)
+	    })
+	})
 }

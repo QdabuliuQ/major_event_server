@@ -59,7 +59,7 @@ exports.getEventListById = (req, res) => {
 					else null end
 				))), -1)
 			else null end
- 	) as resource_info, (select count(*) from ev_event_comment where ev_id=ev_e.ev_id) as commentCount, (select count(*) from ev_event_praise_record where ev_id=ev_e.ev_id) as praiseCount, (select count(*) from ev_event_praise_record where ev_id=ev_e.ev_id and user_id='${req.user.id}') as isPraise, (select count(*) from ev_events where type='4' and resource_id=ev_e.ev_id) as shareCount from ev_events ev_e join ev_users ev_u on ev_e.user_id = ev_u.id left join ev_articles ev_a on ev_e.type = '2' and ev_e.resource_id = ev_a.id left join ev_videos ev_v on ev_e.type = '3' and ev_e.resource_id = ev_v.id left join ev_events ev_e_2 on ev_e.type = '4' and ev_e.resource_id = ev_e_2.ev_id left join ev_users ev_u_2 on ev_e_2.user_id = ev_u_2.id where ev_e.user_id=? and ev_e.state='1' group by ev_e.ev_id order by ev_e.time desc limit ?,?`
+ 	) as resource_info, (select count(*) from ev_event_comment where ev_id=ev_e.ev_id and is_delete='0') as commentCount, (select count(*) from ev_event_praise_record where ev_id=ev_e.ev_id) as praiseCount, (select count(*) from ev_event_praise_record where ev_id=ev_e.ev_id and user_id='${req.user.id}') as isPraise, (select count(*) from ev_events where type='4' and resource_id=ev_e.ev_id) as shareCount from ev_events ev_e join ev_users ev_u on ev_e.user_id = ev_u.id left join ev_articles ev_a on ev_e.type = '2' and ev_e.resource_id = ev_a.id left join ev_videos ev_v on ev_e.type = '3' and ev_e.resource_id = ev_v.id left join ev_events ev_e_2 on ev_e.type = '4' and ev_e.resource_id = ev_e_2.ev_id left join ev_users ev_u_2 on ev_e_2.user_id = ev_u_2.id where ev_e.user_id=? and ev_e.state='1' group by ev_e.ev_id order by ev_e.time desc limit ?,?`
 	db.query(sqlStr, [
 		req.query.id,
 		(parseInt(req.query.offset)-1) * ps,
@@ -260,7 +260,7 @@ exports.getEventReplyList = (req, res) => {
 // 获取动态数据
 exports.getEventData = (req, res) => {
 	let ev_id = req.query.ev_id
-	const sqlStr = `select (select count(*) from ev_event_comment where ev_id='${ev_id}') as commentCount, (select count(*) from ev_event_praise_record where ev_id='${ev_id}') as praiseCount, (select count(*) from ev_event_praise_record where ev_id='${ev_id}' and user_id='${req.user.id}') as isPraise, (select count(*) from ev_events where type='4' and resource_id='${ev_id}') as shareCount from ev_events` 
+	const sqlStr = `select (select count(*) from ev_event_comment where ev_id='${ev_id}' and is_delete='0') as commentCount, (select count(*) from ev_event_praise_record where ev_id='${ev_id}') as praiseCount, (select count(*) from ev_event_praise_record where ev_id='${ev_id}' and user_id='${req.user.id}') as isPraise, (select count(*) from ev_events where type='4' and resource_id='${ev_id}') as shareCount from ev_events` 
 	db.query(sqlStr, (err, results) => {
 		if(err) return res.cc(err)
 		res.send({
