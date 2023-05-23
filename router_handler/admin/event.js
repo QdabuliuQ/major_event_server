@@ -67,3 +67,63 @@ exports.deleteEvent = (req, res) => {
 		})
 	})
 }
+
+const formatData = (item) => {
+	if(item.cover_img) item.cover_img = oss + item.cover_img
+	if(item.video_url) item.video_url = oss + item.video_url
+	if(item.content) item.content = item.content.replace(/<[^>]+>/ig, '')
+	if(item.user_pic) item.user_pic = oss + item.user_pic
+}
+const formatEventData = (data) => {
+	if(data.images) {
+		let images = JSON.parse(data.images)
+		for(let img of images) {
+			img.link = oss + img.link
+		}
+		data.images = images
+	}
+	if(data.resource_info && data.resource_info != -1) {
+		data.resource_info = JSON.parse(data.resource_info)
+		formatData(data.resource_info)
+	}
+}
+
+exports.getEventDetail = (req, res) => {
+	const sqlStr = `select ev_e.*, ev_u.nickname, ev_u.user_pic, (
+		case ev_e.type 
+			when '2' then if(ev_a.state = '1', GROUP_CONCAT(JSON_OBJECT('id',ev_a.id, 'title',ev_a.title, 'cover_img', ev_a.cover_img, 'content', ev_a.content)), -1) 
+			when '3' then if(ev_v.state = '2', GROUP_CONCAT(JSON_OBJECT('id',ev_v.id, 'title',ev_v.title, 'cover_img', ev_v.cover_img, 'duration', ev_v.duration, 'time', ev_v.time, 'video_url', ev_v.video_url)), -1)  
+			when '4' then if(ev_e.state = '1' and ev_e_2.state = '1', GROUP_CONCAT(JSON_OBJECT('ev_id',ev_e_2.ev_id, 'user_id',ev_e_2.user_id, 'user_pic', ev_u_2.user_pic, 'nickname', ev_u_2.nickname, 'content', ev_e_2.content, 'type', ev_e_2.type, 'resource_id', ev_e_2.resource_id, 'images', ev_e_2.images, 'time', ev_e_2.time, 'resource_info', (
+				case ev_e_2.type
+					when '2' then if(ev_e_2.state = '1', (select getEventArticleInfo(ev_e_2.resource_id)), -1) 
+					when '3' then if(ev_e_2.state = '1', (select getEventVideoInfo(ev_e_2.resource_id)), -1) 
+					else null end
+				))), -1)
+			else null end
+ 	) as resource_info, (select count(*) from ev_event_comment where ev_id=ev_e.ev_id and is_delete='0') as commentCount, (select count(*) from ev_event_praise_record where ev_id=ev_e.ev_id) as praiseCount from ev_events ev_e join ev_users ev_u on ev_e.user_id = ev_u.id left join ev_articles ev_a on ev_e.type = '2' and ev_e.resource_id = ev_a.id left join ev_videos ev_v on ev_e.type = '3' and ev_e.resource_id = ev_v.id left join ev_events ev_e_2 on ev_e.type = '4' and ev_e.resource_id = ev_e_2.ev_id left join ev_users ev_u_2 on ev_e_2.user_id = ev_u_2.id where ev_e.ev_id=?`
+	db.query(sqlStr, req.query.ev_id, (err, results) => {
+		if(err) return res.cc(err)
+		if(results.length != 1) return res.cc('获取数据失败')
+		let item = results[0]
+		item.user_pic = oss + item.user_pic
+		if(item.images) {
+			let images = JSON.parse(item.images)
+			for(let img of images) {
+				img.link = oss + img.link
+			}
+			item.images = images
+		}
+		if(item.resource_info) {
+			item.resource_info = JSON.parse(item.resource_info)
+			formatData(item.resource_info)
+			if(item.type == '4') {
+				formatEventData(item.resource_info)
+			}
+		}
+		res.send({
+			status: 0,
+			data: item,
+			msg: '获取成功'
+		})
+	})
+}
