@@ -45,4 +45,5 @@ router.post('/getReceNoticeDetail', getReceNoticeDetail)
 // 修改后台公告
 router.post('/updateReceNotice', expressJoi(add_back_notice_schema), updateReceNotice)
 
+
 module.exports = router

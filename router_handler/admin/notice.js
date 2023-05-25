@@ -232,6 +232,7 @@ function unicodeDecode(str)
 
 // 审核前台公告
 exports.updateNoticeAppStatus = (req, res) => {
+	if(req.adminData.type != '1') return res.cc('权限错误')
     // 判断状态
     const sqlStr = 'select * from ev_admins where admin_id=? and type=1'
     checkStatus(sqlStr, req.user.admin_id, res, () => {
@@ -289,24 +290,24 @@ const updateStatus = (req, res) => {
 
 // 更新前台公告
 exports.updateReceNotice = (req, res) => {
-
-    // 自己才能修改自己提交的数据
-    const sqlStr = `select * from ev_rece_notice where app_status="1"`
-    db.query(sqlStr, (err, results) => {
-        if(err) return res.cc(err)
-        if(results.length != 1) return res.cc('修改公告失败')
-        // 审核状态
-        if(results[0].app_status == '1') {
-            // 超管
-            if(req.adminData.type == 1) {
-                return updateStatus(req, res)
-            } else {  // 普通管理员
-                if(results[0].pub_id == req.user.admin_id) {
-                    return updateStatus(req, res)
-                }
-            }
-        }
-        res.cc('修改公告失败')
-    })
-
+	if(req.adminData.type != '1') return res.cc('权限错误')
+	const sqlStr = 'select * from ev_rece_notice where app_status<>"3" and id=?'
+	db.query(sqlStr, req.body.id, (err, results) => {
+		if(err) return res.cc(err)
+		if(results.length != 1) return res.cc('修改公告失败')
+		updateStatus(req, res)
+	})
+//     const sqlStr = `select * from ev_rece_notice where app_status<>"3"`
+//     db.query(sqlStr, (err, results) => {
+//         if(err) return res.cc(err)
+//         if(results.length != 1) return res.cc('修改公告失败')
+//         // 审核状态
+//         if(results[0].app_status == '1') {
+//             // 超管
+//             if(req.adminData.type == 1) {
+//                 return updateStatus(req, res)
+//             }
+//         }
+//         res.cc('修改公告失败')
+//     })
 }

@@ -273,19 +273,28 @@ exports.getEventData = (req, res) => {
 
 // 举报动态
 exports.reportEvent = (req, res) => {
-	const sqlStr = 'select * from ev_events where ev_id=? and state = "1"'
+	const sqlStr = 'select * from ev_events where ev_id=? and state="1"'
 	db.query(sqlStr, req.body.ev_id, (err, results) => {
 		if(err) return res.cc(err)
 		if(results.length != 1) return res.cc('举报失败')
-		const sqlStr = 'insert ev_event_report set ?'
-		db.query(sqlStr, {
-			ev_id: req.body.ev_id,
-			user_id: req.user.id,
-			reason: req.body.reason,
-		}, (err, results) => {
-			if(err) return res.cc('举报审核中', 0)
-			res.cc('举报成功', 0)
+		const sqlStr = 'select * from ev_event_report ev_er inner join ev_events ev_e on ev_er.ev_id = ev_e.ev_id where ev_er.ev_id=? and ev_er.state = "1" and ev_er.user_id=? and ev_er.reason=?'
+		db.query(sqlStr, [
+			req.body.ev_id,
+			req.user.id,
+			req.body.reason
+		], (err, results) => {
+			if(err) return res.cc(err)
+			if(results.length == 1) return res.cc('举报审核中', 0)
+			const sqlStr = 'insert ev_event_report set ?'
+			db.query(sqlStr, {
+				ev_id: req.body.ev_id,
+				user_id: req.user.id,
+				reason: req.body.reason,
+				time: Date.now()
+			}, (err, results) => {
+				res.cc('举报成功', 0)
+			})
 		})
 	})
-	
 }
+
