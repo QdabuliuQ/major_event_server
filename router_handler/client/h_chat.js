@@ -106,7 +106,7 @@ on
 left join ev_articles ev_a on ev_ml.type = '2' and ev_ml.resource = ev_a.id 
 left join ev_videos ev_v on ev_ml.type = '3' and ev_ml.resource = ev_v.id
 where 
-	room_id = ? group by ev_ml.msg_id 
+	room_id = ? and ev_ml.state='1' group by ev_ml.msg_id 
 order by 
 	ev_ml.time desc limit ?,?`
 	db.query(sqlStr, [

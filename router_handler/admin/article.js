@@ -34,7 +34,7 @@ exports.getArticleList = (req, res) => {
   let val = req.body.val ? req.body.val : ''
   let valSql = `(ev_a.id like '%${val}%' or ev_a.title like '%${val}%' or ev_a.author_id like '%${val}%')`
 
-  const sqlStr = `select ev_a.*, ev_c.name as cate_name, ev_u.nickname, ev_u.user_pic, ev_u.intro from ev_articles ev_a, ev_article_cate ev_c, ev_users ev_u where ev_c.id = ev_a.cate_id and ev_a.author_id=ev_u.id and ${cateSql} and ${stateSql} and ${timeSql} and ${valSql} order by ev_a.pub_date desc limit ?,?`
+  const sqlStr = `select ev_a.*, ev_c.name as cate_name, ev_u.nickname, ev_u.user_pic, ev_u.intro, (select count(*) from ev_article_browse_record where art_id=ev_a.id) as browse_count, (select count(*) from ev_article_collect_record where art_id=ev_a.id) as collect_count, (select count(*) from ev_article_comment_record where art_id=ev_a.id) as comment_count from ev_articles ev_a, ev_article_cate ev_c, ev_users ev_u where ev_c.id = ev_a.cate_id and ev_a.author_id=ev_u.id and ${cateSql} and ${stateSql} and ${timeSql} and ${valSql} order by ev_a.pub_date desc limit ?,?`
   db.query(sqlStr, [(parseInt(req.body.offset)-1)*pageSize, pageSize], (err, results) => {
     if(err) return res.cc(err)
 

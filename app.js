@@ -149,6 +149,8 @@ app.use('/admin/vid', require('./router/admin/video'))
 app.use('/admin/ind', require('./router/admin/index'))
 // 动态模块
 app.use('/admin/eve', require('./router/admin/event'))
+// 消息模块
+app.use('/admin/msg', require('./router/admin/mesasge'))
 
 // 验证码
 app.use('/code', require('./router/code'))
