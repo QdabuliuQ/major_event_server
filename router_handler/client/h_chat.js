@@ -69,7 +69,6 @@ exports.addMessageRecord = (req, res) => {
 			type: req.body.type,
 			resource: req.body.resource
 		}, (err, results) => {
-			console.log(err)
 			if(err || results.affectedRows != 1) return res.cc('发送失败')
 			res.send({
 				status: 0,
