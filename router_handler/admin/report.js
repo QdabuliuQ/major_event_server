@@ -241,7 +241,6 @@ exports.getVideoReportList = (req, res) => {
     ], req.query)
     let ps = req.query.pageSize ?  parseInt(req.query.pageSize) : pageSize
     const sqlStr = `select ev_vr.*, ev_u.nickname, ev_u.user_pic, ev_v.video_url from ev_video_report ev_vr join ev_users ev_u on ev_vr.user_id = ev_u.id inner join ev_videos ev_v on ev_v.id = ev_vr.video_id where ${reasonSql} and ${stateSql} and ${timeSql} and ${valSql} order by ev_vr.time desc limit ?,?`
-    console.log(sqlStr)
     db.query(sqlStr, [
         (parseInt(req.query.offset)-1)*ps,
         ps

@@ -92,7 +92,7 @@ exports.getMessageList = (req, res) => {
 	ev_ml.*, ev_u.user_pic from_user_pic, ev_u.nickname from_user_nickname, 
 	(
 		case ev_ml.type 
-			when '2' then GROUP_CONCAT(JSON_OBJECT('id',ev_a.id, 'title',ev_a.title, 'cover_img', ev_a.cover_img, 'content', ev_a.content))
+			when '2' then GROUP_CONCAT(JSON_OBJECT('id',ev_a.id, 'title',ev_a.title, 'cover_img', ev_a.cover_img, 'content', substr(ev_a.content, 1, 100)))
 			when '3' then GROUP_CONCAT(JSON_OBJECT('id',ev_v.id, 'title',ev_v.title, 'cover_img', ev_v.cover_img, 'duration', ev_v.duration, 'time', ev_v.time))
 			else null end
  	) as resource_info 
@@ -123,7 +123,7 @@ order by
 		}
 		results.reverse()
 		let data = results
-		const sqlStr = 'select count(*) as count from ev_message_list where room_id = ?'
+		const sqlStr = 'select count(*) as count from ev_message_list where room_id = ? and state="1"'
 		db.query(sqlStr, req.body.room_id, (err, results) => {
 			let count = results[0].count
 			res.send({
@@ -141,7 +141,7 @@ order by
 // 获取聊天对象
 exports.getChatObject = (req, res) => {
 	let ps = req.body.pageSize ? parseInt(req.body.pageSize) : pageSize
-	const sqlStr = 'select ev_cl.*, ev_u.nickname, ev_u.user_pic, ev_u.id as u_id, res.type, res.time as msg_time, res.resource from ev_chat_list ev_cl join ev_users ev_u on ev_u.id = if(ev_cl.user_id = ?, ev_cl.another_id, ev_cl.user_id) inner join (select ev_a.time as time, ev_a.resource as resource, ev_a.room_id as room_id, ev_a.type as type from ev_message_list ev_a left join ev_message_list ev_b on ev_a.room_id=ev_b.room_id and ev_a.time < ev_b.time where ev_b.time is null) res on res.room_id = ev_cl.room_id where user_id = ? or another_id = ? order by msg_time desc limit ?,?'
+	const sqlStr = 'select ev_cl.*, ev_u.nickname, ev_u.user_pic, ev_u.id as u_id, res.type, res.time as msg_time, res.resource from ev_chat_list ev_cl join ev_users ev_u on ev_u.id = if(ev_cl.user_id = ?, ev_cl.another_id, ev_cl.user_id) inner join (select ev_a.time as time, ev_a.resource as resource, ev_a.room_id as room_id, ev_a.type as type from ev_message_list ev_a left join ev_message_list ev_b on ev_a.room_id=ev_b.room_id and ev_a.time < ev_b.time where ev_b.time is null and ev_a.state="1") res on res.room_id = ev_cl.room_id where user_id = ? or another_id = ? order by msg_time desc limit ?,?'
 	db.query(sqlStr, [
 		req.user.id,
 		req.user.id,

@@ -13,6 +13,7 @@ const {
 const {
     update_report_state_schema,
     add_report_reason_schema,
+	update_comment_report_state_schema,
 } = require('../../schema/admin/report')
 const router = express.Router()
 
@@ -35,7 +36,7 @@ router.post('/deleteReportReason', deleteReportReason)
 router.get('/getCommentReportList', getCommentReportList)
 
 // 更新评论举报状态
-router.post('/updateCommentReportState', expressJoi(update_report_state_schema), updateCommentReportState)
+router.post('/updateCommentReportState', expressJoi(update_comment_report_state_schema), updateCommentReportState)
 
 // 获取视频举报列表
 router.get('/getVideoReportList', getVideoReportList)

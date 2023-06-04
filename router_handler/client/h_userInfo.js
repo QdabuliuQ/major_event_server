@@ -1,7 +1,8 @@
 const db = require('../../db/index')
 const bcrypt = require('bcryptjs')  // 密码校验
-const { oss, pageSize} = require('../../config')
+const { oss } = require('../../config')
 const { cutUrl, uuid } = require("../../tools");
+const pageSize = 30
 
 // 获取用户信息
 exports.getUserInfo = (req, res) => {

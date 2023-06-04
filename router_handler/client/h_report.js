@@ -95,13 +95,13 @@ exports.getArticleReportList = (req, res) => {
 // 获取评论举报记录
 exports.getCommentReportList = (req, res) => {
 	let pageSize = 30
-    const sqlStr = `select ev_cr.*, if(ev_cr.type = '1', ev_ac.content, ev_vc.content) as content from ev_comment_report ev_cr LEFT JOIN ev_article_comment ev_ac ON ev_cr.comment_id = ev_ac.comment_id AND ev_cr.type = "1" LEFT JOIN ev_video_comment ev_vc ON ev_cr.comment_id = ev_vc.comment_id AND ev_cr.type = "2" where ev_cr.user_id=? order by ev_cr.time desc limit ?,?`
+    const sqlStr = `select ev_cr.*, if(ev_cr.type = '1', ev_ac.content, if(ev_cr.type = '2', ev_vc.content, ev_ec.content)) as content from ev_comment_report ev_cr LEFT JOIN ev_article_comment ev_ac ON ev_cr.comment_id = ev_ac.comment_id AND ev_cr.type = "1" LEFT JOIN ev_video_comment ev_vc ON ev_cr.comment_id = ev_vc.comment_id AND ev_cr.type = "2" LEFT JOIN ev_event_comment ev_ec ON ev_cr.comment_id = ev_ec.comment_id AND ev_cr.type = "3" where ev_cr.user_id=? order by ev_cr.time desc limit ?,?`
     db.query(sqlStr, [
         req.user.id,
         (parseInt(req.query.offset)-1)*pageSize,
         pageSize
     ], (err, results) => {
-        if(err) return res.cc(err)
+        if(err) return res.cc(err) 
         let data = results
 
         const sqlStr = `select count(*) as count from ev_comment_report where user_id = ?`
@@ -165,17 +165,18 @@ exports.getArticleReportDetail = (req, res) => {
 }
 
 exports.addMessageReport = (req, res) => {
-	const sqlStr = 'select * from ev_message_report where msg_id=? and user_id=? and state="1";select count(*) as count from ev_users where id=?'
+	const sqlStr = 'select * from ev_message_report where msg_id=? and user_id=? and state="1"; select count(*) as count from ev_message_list where msg_id=? and state="1"'
 	db.query(sqlStr, [
 		req.body.msg_id,
 		req.user.id,
-		req.body.send_id
+		req.body.msg_id
 	], (err, results) => {
 	    if(err) return res.cc(err)
 		if(results[0].length == 1) return res.cc('举报审核中', 0)
 	    if(results[1][0].count != 1) return res.cc('举报失败')
 	    const sqlStr = 'insert into ev_message_report set ?'
 	    db.query(sqlStr, {
+			rep_id: 'r_'+uuid(20, 36),
 	        user_id: req.user.id,
 	        msg_id: req.body.msg_id,
 	        reason: req.body.reason,

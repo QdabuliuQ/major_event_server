@@ -58,7 +58,6 @@ exports.updateVideoState = (req, res) => {
         if(err) return res.cc(err)
         if(results.length != 1) return res.cc('更新视频状态失败')
         if(results[0].state == '4') res.cc('更新视频状态失败')
-
         const sqlStr = 'update ev_videos set state = ? where id = ?'
         db.query(sqlStr, [
             req.body.state,

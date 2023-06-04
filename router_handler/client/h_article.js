@@ -77,6 +77,8 @@ exports.getArticleDetail = (req, res) => {
     db.query(sqlStr, req.params.id, (err, results) => {
         if(err) return res.cc(err)
         if(results.length != 1) return res.cc('获取文章信息失败', -2)
+		if(results[0].state == '2') return res.cc('文章封禁中', 2)
+		if(results[0].state == '3') return res.cc('文章被删除', 3)
         results[0].targets = JSON.parse(results[0].targets)
         results[0].user_pic = oss + results[0].user_pic
         results[0].cover_img = oss + results[0].cover_img
@@ -104,9 +106,7 @@ exports.getArticleDetail = (req, res) => {
 exports.getArticleParams = (req, res) => {
     let art_id = req.params.id, u_id = req.user.id
     const praiseSql = `select count(case when(art_id='${art_id}' and user_id='${u_id}') then 1 else null end) as is_praise, count(case when(art_id='${art_id}') then 1 else null end) as praise_count from ev_article_praise_record`
-
     const collectSql = `select count(case when(art_id='${art_id}' and user_id='${u_id}') then 1 else null end) as is_collect, count(case when(art_id='${art_id}') then 1 else null end) as collect_count from ev_article_collect_record`
-
     const sqlStr = `${praiseSql};${collectSql}`
 
     db.query(sqlStr, [req.params.id, req.params.id], (err, results) => {
@@ -136,13 +136,13 @@ exports.getArticleList = (req, res) => {
     } else {
         whereSql = `cate_id<>'-1'`
     }
-    const sqlStr = `select * from ev_articles where ${whereSql} and state="1" order by pub_date desc ${offsetSql}`
+    const sqlStr = `select *, substr(ev_a.content,1,100) as content from ev_articles ev_a where ${whereSql} and state="1" order by pub_date desc ${offsetSql}`
     db.query(sqlStr, (err, results) => {
         if(err) return res.cc(err)
         for(let item of results) {
             item.cover_img = oss + item.cover_img
             item.content = item.content.replace(/<[^>]+>/ig, '')
-            item.targets = JSON.parse(item.targets)
+            item.targets = JSON.parse(item.targets) 
         }
         let data = results
         const sqlStr = `select count(*) as count from ev_articles where ${whereSql} and state="1" and is_delete=0 ${offsetSql}`
@@ -350,20 +350,7 @@ exports.praiseComment = (req, res) => {
 
 exports.getArticleById = (req, res) => {
     let ps = req.query.pageSize ? parseInt(req.query.pageSize) : pageSize
-    let typeSql = ''
-    switch (req.query.type) {
-        case '1':
-            typeSql = `(ev_a.state='1' and ev_a.is_delete='0')`
-            break;
-        case '2':
-            typeSql = `(ev_a.state='2')`
-            break
-        case '3':
-            typeSql = `(ev_a.is_delete='1')`
-            break
-        default:
-            typeSql = `(ev_a.state <> -999)`
-    }
+    let typeSql = req.query.type == 0 ? `(ev_a.state <> -999)` : `(ev_a.state = "${req.query.type}")`
 
     const sqlStr = `select ev_a.*, (select count(*) from ev_article_browse_record where art_id=ev_a.id) as browse_count, (select count(*) from ev_article_praise_record where art_id=ev_a.id) as praise_count, (select count(*) from ev_article_comment_record where art_id=ev_a.id and is_delete='0') as comment_count, (select count(*) from ev_article_collect_record where art_id=ev_a.id and is_delete='0') as collect_count from ev_articles ev_a where author_id=? and ${typeSql} order by pub_date desc limit ?,?`
     db.query(sqlStr, [

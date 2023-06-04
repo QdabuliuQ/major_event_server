@@ -192,24 +192,28 @@ exports.getEventReport = (req, res) => {
 
 // 更新举报状态
 exports.updateReportState = (req, res) => {
-	const sqlStr = 'update ev_event_report set state=? where ev_id=? and user_id=? and state="1" and reason=?'
-	db.query(sqlStr, [
-		req.body.state,
-		req.body.ev_id,
-		req.body.user_id,
-		req.body.reason,
-	], (err, results) => {
-		if(err) return res.cc('更新状态失败')
-		if(results.affectedRows != 1) return res.cc('更新状态失败')
-		if(req.body.state == '2') {
-			const sqlStr = 'update ev_events set state="2" where ev_id=? and state="1"'
-			db.query(sqlStr, req.body.ev_id, (err, results) => {
-				if(err) return res.cc(err)
-				if(results.affectedRows != 1) return res.cc('更新状态失败')
+	const sqlStr = 'select * from ev_event_report where rep_id=? and state="1"'
+	db.query(sqlStr, req.body.rep_id, (err, results) => {
+		if(err) return res.cc(err)
+		if(results.length != 1) return res.cc('更新状态失败')
+		const sqlStr = 'update ev_event_report set state=? where rep_id=?'
+		db.query(sqlStr, [
+			req.body.state,
+			req.body.rep_id
+		], (err, results) => {
+			if(err) return res.cc(err)
+			if(results.affectedRows != 1) return res.cc('更新状态失败')
+			if(req.body.state == '2') {
+				const sqlStrs = 'update ev_event_report set state="2" where ev_id=? and state="1"; update ev_events set state="2" where ev_id=?'
+				db.query(sqlStrs, [
+					req.body.ev_id,
+					req.body.ev_id
+				], (err, results) => {
+					res.cc('更新状态成功', 0)
+				})
+			} else {
 				res.cc('更新状态成功', 0)
-			})
-		} else {
-			return res.cc('更新状态成功', 0)
-		}
+			}
+		})
 	})
 }
